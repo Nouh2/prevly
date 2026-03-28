@@ -136,20 +136,21 @@
     }
     .wordmark-accent { color: var(--violet); }
 
-    .nav-cta { display: none; }
+    .nav-cta {
+      display: none;
+      align-items: center;
+      background: var(--violet);
+      color: var(--white);
+      font-family: 'Epilogue', sans-serif;
+      font-size: 13.5px;
+      font-weight: 500;
+      padding: 9px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .18s, transform .15s, box-shadow .18s;
+    }
     @media (min-width: 768px) {
-      .nav-cta {
-        display: inline-flex;
-        align-items: center;
-        background: var(--violet);
-        color: var(--white);
-        font-family: 'Epilogue', sans-serif;
-        font-size: 13.5px;
-        font-weight: 500;
-        padding: 9px 20px;
-        border-radius: 8px;
-        transition: background .18s, transform .15s, box-shadow .18s;
-      }
+      .nav-cta { display: inline-flex; }
       .nav-cta:hover {
         background: var(--violet-hover);
         transform: translateY(-1px);
@@ -892,7 +893,7 @@
   ════════════════════════════════════════ -->
   <nav class="nav">
     <div class="wordmark">Prev<span class="wordmark-accent">ly</span></div>
-    <button class="nav-cta btn" onclick="goToFinalCTA()">Rejoindre la bêta</button>
+    <button class="nav-cta" onclick="goToFinalCTA()">Rejoindre la bêta</button>
   </nav>
 
 
