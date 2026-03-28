@@ -1276,8 +1276,12 @@
     (function () {
       'use strict';
 
-      /* ── Storage ── */
-      var STORE_KEY = 'prevly_beta_v1';
+      /* ── Waitlist config ── */
+      var STORE_KEY = 'prevly_beta_v2';
+      var WAITLIST_ENDPOINT = window.PREVLY_WAITLIST_ENDPOINT || 'https://script.google.com/macros/s/AKfycbxMisllNC4w_qXETF2ZyNy_obKpJUS_KR5LSZBM5uQgUg-cbM-FCizondNN_oZJS-9aJg/exec';
+      var WAITLIST_SOURCE = 'prevly-landing';
+      var WAITLIST_TIMEOUT_MS = 10000;
+      var ENDPOINT_READY = WAITLIST_ENDPOINT && WAITLIST_ENDPOINT.indexOf('REPLACE_WITH_YOUR_DEPLOYMENT_ID') === -1;
 
       function getSignups() {
         try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }
@@ -1299,15 +1303,97 @@
         return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
       }
 
+      function getFormParts(id) {
+        return {
+          form: document.getElementById('form-' + id),
+          input: document.getElementById('input-' + id),
+          err: document.getElementById('err-' + id),
+          ok: document.getElementById('ok-' + id),
+          button: document.querySelector('#form-' + id + ' button[type="submit"]')
+        };
+      }
+
+      function clearFormState(id) {
+        var parts = getFormParts(id);
+        if (!parts.input || !parts.err) { return; }
+        parts.input.classList.remove('is-error');
+        parts.err.classList.remove('visible');
+        parts.err.textContent = 'Adresse email invalide.';
+      }
+
+      function setFormError(id, message) {
+        var parts = getFormParts(id);
+        if (!parts.input || !parts.err) { return; }
+        parts.input.classList.add('is-error');
+        parts.err.textContent = message;
+        parts.err.classList.add('visible');
+      }
+
+      function setSubmittingState(isSubmitting) {
+        ['hero', 'final'].forEach(function (id) {
+          var parts = getFormParts(id);
+          if (!parts.button || !parts.input) { return; }
+          if (!parts.button.dataset.defaultLabel) {
+            parts.button.dataset.defaultLabel = parts.button.textContent;
+          }
+          parts.button.disabled = isSubmitting;
+          parts.input.disabled = isSubmitting;
+          parts.button.classList.toggle('is-loading', isSubmitting);
+          parts.button.textContent = isSubmitting ? 'Inscription...' : parts.button.dataset.defaultLabel;
+        });
+      }
+
+      function submitToWaitlist(email) {
+        return new Promise(function (resolve, reject) {
+          if (!ENDPOINT_READY) {
+            reject(new Error('waitlist_not_configured'));
+            return;
+          }
+
+          var callbackName = 'prevlyWaitlistCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+          var query = [
+            'email=' + encodeURIComponent(email),
+            'source=' + encodeURIComponent(WAITLIST_SOURCE),
+            'page=' + encodeURIComponent(window.location.href),
+            'callback=' + encodeURIComponent(callbackName)
+          ].join('&');
+          var script = document.createElement('script');
+          var timeoutId = null;
+
+          function cleanup() {
+            if (timeoutId) { window.clearTimeout(timeoutId); }
+            if (script.parentNode) { script.parentNode.removeChild(script); }
+            try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+          }
+
+          window[callbackName] = function (payload) {
+            cleanup();
+            resolve(payload || { ok: false, error: 'empty_response' });
+          };
+
+          script.async = true;
+          script.onerror = function () {
+            cleanup();
+            reject(new Error('network_error'));
+          };
+          script.src = WAITLIST_ENDPOINT + (WAITLIST_ENDPOINT.indexOf('?') === -1 ? '?' : '&') + query;
+
+          timeoutId = window.setTimeout(function () {
+            cleanup();
+            reject(new Error('timeout'));
+          }, WAITLIST_TIMEOUT_MS);
+
+          document.body.appendChild(script);
+        });
+      }
+
       /* ── Form state: sync both forms ── */
       function setAllSuccess() {
         ['hero', 'final'].forEach(function (id) {
-          var form = document.getElementById('form-' + id);
-          var err  = document.getElementById('err-' + id);
-          var ok   = document.getElementById('ok-' + id);
-          if (form) { form.style.display = 'none'; }
-          if (err)  { err.classList.remove('visible'); }
-          if (ok)   { ok.classList.add('visible'); }
+          var parts = getFormParts(id);
+          if (parts.form) { parts.form.style.display = 'none'; }
+          if (parts.err)  { parts.err.classList.remove('visible'); }
+          if (parts.ok)   { parts.ok.classList.add('visible'); }
         });
       }
 
@@ -1315,24 +1401,43 @@
         return function (e) {
           e.preventDefault();
 
-          var input = document.getElementById('input-' + id);
-          var err   = document.getElementById('err-' + id);
-          var val   = input.value.trim();
+          var parts = getFormParts(id);
+          var input = parts.input;
+          var val   = input.value.trim().toLowerCase();
 
           /* Clear previous state */
-          input.classList.remove('is-error');
-          err.classList.remove('visible');
+          clearFormState(id);
 
           if (!isValidEmail(val)) {
-            input.classList.add('is-error');
-            err.classList.add('visible');
+            setFormError(id, 'Adresse email invalide.');
             input.focus();
             return;
           }
 
-          var total = addSignup(val);
-          setAllSuccess();
-          console.info('[Prevly] Inscription enregistrée :', val, '| Total :', total);
+          setSubmittingState(true);
+
+          submitToWaitlist(val)
+            .then(function (result) {
+              if (!result || result.ok !== true) {
+                throw new Error(result && result.error ? result.error : 'submission_failed');
+              }
+
+              var total = addSignup(val);
+              setAllSuccess();
+              console.info('[Prevly] Inscription synchronisée :', val, '| Total local :', total, '| Duplicate :', !!result.duplicate);
+            })
+            .catch(function (error) {
+              if (error && error.message === 'waitlist_not_configured') {
+                setFormError(id, 'Ajoutez d’abord l’URL du script Google Sheets dans le fichier HTML.');
+                return;
+              }
+
+              setFormError(id, 'Inscription temporairement indisponible. Réessayez dans un instant.');
+              console.error('[Prevly] Échec inscription :', error);
+            })
+            .finally(function () {
+              setSubmittingState(false);
+            });
         };
       }
 
