@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prevly — Co-pilote financier IA pour indépendants</title>
+  <meta name="description" content="Prevly prédit vos flux sur 90 jours, détecte les tensions avant qu'elles arrivent, et vous conseille comme un CFO. Sans le prix d'un CFO." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Epilogue:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ══════════════════════════════════════════
+       RESET
+    ══════════════════════════════════════════ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    html, body {
+      overflow-x: hidden;
+    }
+    img, svg { display: block; }
+    button { cursor: pointer; font: inherit; border: none; }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    /* ══════════════════════════════════════════
+       DESIGN TOKENS
+    ══════════════════════════════════════════ */
+    :root {
+      --cream:          #FAF7F2;
+      --text:           #1A1A1A;
+      --text-muted:     #666666;
+      --text-light:     #999999;
+      --violet:         #5B4FE8;
+      --violet-hover:   #4A3ED5;
+      --violet-soft:    #F0EFFE;
+      --violet-mid:     #E2DCFC;
+      --orange:         #E8834F;
+      --orange-soft:    #FFF3EC;
+      --orange-border:  #F5D2B4;
+      --green:          #3DAA7A;
+      --green-soft:     #F0FBF5;
+      --green-border:   #B8E4CE;
+      --red:            #DC4545;
+      --border:         #E4DDD3;
+      --border-light:   #EDE8DF;
+      --white:          #FFFFFF;
+      --shadow-sm:      0 1px 3px rgba(26,26,26,.06), 0 1px 2px rgba(26,26,26,.04);
+      --shadow:         0 4px 14px rgba(26,26,26,.08), 0 2px 5px rgba(26,26,26,.04);
+      --shadow-lg:      0 20px 56px rgba(26,26,26,.11), 0 6px 18px rgba(26,26,26,.06);
+      --r:              12px;
+      --r-sm:           8px;
+    }
+
+    /* ══════════════════════════════════════════
+       BASE
+    ══════════════════════════════════════════ */
+    body {
+      font-family: 'Epilogue', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2 {
+      font-family: 'Playfair Display', serif;
+      line-height: 1.12;
+      letter-spacing: -0.022em;
+    }
+
+    /* ══════════════════════════════════════════
+       LAYOUT
+    ══════════════════════════════════════════ */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    @media (min-width: 768px) {
+      .container { padding: 0 48px; }
+    }
+
+    section { padding: 80px 0; }
+    @media (min-width: 768px) {
+      section { padding: 120px 0; }
+    }
+
+    /* ══════════════════════════════════════════
+       LABELS
+    ══════════════════════════════════════════ */
+    .label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--violet);
+      margin-bottom: 16px;
+    }
+
+    /* ══════════════════════════════════════════
+       NAVIGATION
+    ══════════════════════════════════════════ */
+    .nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 200;
+      height: 62px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(250,247,242,.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(228,221,211,.5);
+    }
+    @media (min-width: 768px) {
+      .nav { padding: 0 48px; }
+    }
+
+    .wordmark {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .wordmark-accent { color: var(--violet); }
+
+    .nav-cta { display: none; }
+    @media (min-width: 768px) {
+      .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        background: var(--violet);
+        color: var(--white);
+        font-family: 'Epilogue', sans-serif;
+        font-size: 13.5px;
+        font-weight: 500;
+        padding: 9px 20px;
+        border-radius: 8px;
+        transition: background .18s, transform .15s, box-shadow .18s;
+      }
+      .nav-cta:hover {
+        background: var(--violet-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(91,79,232,.24);
+      }
+      .nav-cta:active { transform: none; }
+    }
+
+    /* ══════════════════════════════════════════
+       BUTTONS
+    ══════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Epilogue', sans-serif;
+      font-weight: 500;
+      border-radius: var(--r-sm);
+      transition: background .18s, transform .15s, box-shadow .18s, border-color .18s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--violet);
+      color: var(--white);
+      font-size: 14.5px;
+      padding: 13px 24px;
+    }
+    .btn-primary:hover {
+      background: var(--violet-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(91,79,232,.24);
+    }
+    .btn-primary:active { transform: none; box-shadow: none; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--violet);
+      border: 1.5px solid var(--violet);
+      font-size: 14px;
+      padding: 11px 20px;
+    }
+    .btn-outline:hover { background: var(--violet-soft); }
+
+    .btn-filled {
+      background: var(--violet);
+      color: var(--white);
+      border: 1.5px solid var(--violet);
+      font-size: 14px;
+      padding: 11px 20px;
+    }
+    .btn-filled:hover {
+      background: var(--violet-hover);
+      border-color: var(--violet-hover);
+    }
+
+    .btn-full { width: 100%; }
+
+    /* ══════════════════════════════════════════
+       EMAIL FORMS
+    ══════════════════════════════════════════ */
+    .form-wrap {
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    .email-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    @media (min-width: 520px) {
+      .email-form { flex-direction: row; }
+    }
+
+    .email-input {
+      flex: 1;
+      min-width: 0;
+      font-family: 'Epilogue', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--text);
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 13px 16px;
+      outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .email-input::placeholder { color: var(--text-light); }
+    .email-input:focus {
+      border-color: var(--violet);
+      box-shadow: 0 0 0 3px rgba(91,79,232,.1);
+    }
+    .email-input.is-error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(220,69,69,.09);
+    }
+
+    .error-msg {
+      font-size: 13px;
+      color: var(--red);
+      margin-top: 8px;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    .success-msg {
+      display: none;
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+      border-radius: var(--r-sm);
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--green);
+      text-align: center;
+    }
+    .success-msg.visible { display: block; }
+
+    .reassurance {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      font-size: 12.5px;
+      color: var(--text-light);
+    }
+    .reassurance span {
+      padding: 0 10px;
+      border-right: 1px solid var(--border);
+    }
+    .reassurance span:last-child { border-right: none; }
+
+    /* ══════════════════════════════════════════
+       HERO
+    ══════════════════════════════════════════ */
+    #hero {
+      padding-top: 120px;
+      padding-bottom: 80px;
+      text-align: center;
+    }
+    @media (min-width: 768px) {
+      #hero { padding-top: 158px; padding-bottom: 120px; }
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--violet);
+      background: var(--violet-soft);
+      border: 1px solid var(--violet-mid);
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+    }
+
+    .hero-h1 {
+      font-size: clamp(38px, 7.5vw, 74px);
+      max-width: 680px;
+      margin: 0 auto 22px;
+    }
+    .hero-h1 em {
+      font-style: italic;
+      color: var(--violet);
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 2.3vw, 18px);
+      color: var(--text-muted);
+      max-width: 510px;
+      margin: 0 auto 48px;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+
+    /* ══════════════════════════════════════════
+       DASHBOARD DEMO
+    ══════════════════════════════════════════ */
+    .dashboard {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-lg);
+      max-width: 440px;
+      margin: 0 auto 36px;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .dash-topbar {
+      height: 4px;
+      background: linear-gradient(90deg, var(--violet) 0%, #9B8FF8 100%);
+    }
+
+    .dash-head {
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dash-head-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .dash-live {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--green);
+      letter-spacing: .02em;
+    }
+    .dash-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: live-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .38; }
+    }
+
+    .dash-body { padding: 14px; }
+
+    .dash-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-bottom: 9px;
+    }
+    .dash-metric {
+      background: var(--cream);
+      border: 1px solid var(--border-light);
+      border-radius: var(--r-sm);
+      padding: 12px 13px;
+    }
+    .dash-metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 5px;
+    }
+    .dash-metric-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 21px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .dash-metric-delta {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--orange);
+    }
+
+    .dash-score {
+      background: var(--cream);
+      border: 1px solid var(--border-light);
+      border-radius: var(--r-sm);
+      padding: 12px 13px;
+      margin-bottom: 9px;
+    }
+    .dash-score-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 9px;
+    }
+    .dash-score-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+    .dash-score-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--orange);
+      letter-spacing: -0.02em;
+    }
+    .dash-score-val sub {
+      font-family: 'Epilogue', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-light);
+      vertical-align: baseline;
+    }
+
+    .dash-track {
+      height: 7px;
+      background: var(--border-light);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .dash-fill {
+      height: 100%;
+      width: 68%;
+      background: linear-gradient(90deg, #E04545 0%, #E8834F 52%, #E8C04F 100%);
+      border-radius: 4px;
+    }
+    .dash-score-legend {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 9.5px;
+      font-weight: 500;
+      color: var(--text-light);
+    }
+
+    .dash-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      background: var(--orange-soft);
+      border: 1px solid var(--orange-border);
+      border-left: 3px solid var(--orange);
+      border-radius: var(--r-sm);
+      padding: 9px 12px;
+    }
+    .dash-alert-icon {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      margin-top: 1px;
+    }
+    .dash-alert-text {
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .dash-alert-text strong {
+      font-weight: 600;
+      color: #B05A1E;
+    }
+
+    /* ══════════════════════════════════════════
+       SECTION — PROBLEM
+    ══════════════════════════════════════════ */
+    #problem {
+      background: var(--white);
+      border-top: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .problem-h2 {
+      font-size: clamp(22px, 3.4vw, 38px);
+      max-width: 640px;
+      margin-bottom: 56px;
+      line-height: 1.22;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    @media (min-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 52px; }
+    }
+
+    .stat-block {
+      padding-top: 22px;
+      border-top: 2px solid var(--border);
+    }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(48px, 6vw, 68px);
+      font-weight: 700;
+      color: var(--violet);
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 10px;
+    }
+    .stat-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ══════════════════════════════════════════
+       SECTION — HOW IT WORKS
+    ══════════════════════════════════════════ */
+    #how {}
+
+    .how-h2 {
+      font-size: clamp(26px, 4vw, 44px);
+      margin-bottom: 54px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 768px) {
+      .steps { max-width: 660px; }
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 22px;
+      padding: 30px 0;
+      border-bottom: 1px solid var(--border-light);
+      align-items: start;
+    }
+    .step:last-child { border-bottom: none; }
+
+    .step-n {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--border);
+      line-height: 1;
+      letter-spacing: -0.04em;
+      padding-top: 2px;
+    }
+    .step-body h3 {
+      font-family: 'Epilogue', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 7px;
+      color: var(--text);
+    }
+    .step-body p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.62;
+    }
+
+    /* ══════════════════════════════════════════
+       SECTION — FEATURES
+    ══════════════════════════════════════════ */
+    #features {
+      background: var(--white);
+      border-top: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .features-h2 {
+      font-size: clamp(26px, 4vw, 44px);
+      margin-bottom: 54px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--border-light);
+      border-left: 1px solid var(--border-light);
+    }
+    @media (min-width: 768px) {
+      .features-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .feature {
+      padding: 26px 22px;
+      border-right: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .feature-idx {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--violet);
+      margin-bottom: 10px;
+    }
+    .feature h3 {
+      font-family: 'Epilogue', sans-serif;
+      font-size: 14.5px;
+      font-weight: 600;
+      margin-bottom: 7px;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .feature p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.62;
+    }
+
+    /* ══════════════════════════════════════════
+       SECTION — COMPARISON
+    ══════════════════════════════════════════ */
+    #comparison {}
+
+    .comparison-h2 {
+      font-size: clamp(22px, 3.4vw, 38px);
+      max-width: 560px;
+      margin-bottom: 54px;
+      line-height: 1.22;
+    }
+
+    .comp-blocks { display: flex; flex-direction: column; }
+
+    .comp-block {
+      padding: 30px 0;
+      border-bottom: 1px solid var(--border-light);
+      display: grid;
+      gap: 14px;
+    }
+    .comp-block:last-child { border-bottom: none; }
+    @media (min-width: 768px) {
+      .comp-block {
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+      }
+    }
+
+    .comp-before {
+      font-size: 15.5px;
+      color: var(--text-muted);
+      padding-left: 14px;
+      border-left: 2px solid var(--border);
+      line-height: 1.58;
+    }
+    .comp-after {
+      font-size: 15.5px;
+      font-weight: 500;
+      color: var(--text);
+      padding-left: 14px;
+      border-left: 2px solid var(--violet);
+      line-height: 1.58;
+    }
+
+    /* ══════════════════════════════════════════
+       SECTION — PRICING
+    ══════════════════════════════════════════ */
+    #pricing {
+      background: var(--white);
+      border-top: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .pricing-h2 {
+      font-size: clamp(26px, 4vw, 44px);
+      margin-bottom: 10px;
+    }
+    .pricing-sub {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 54px;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .pricing-grid {
+        grid-template-columns: repeat(3, 1fr);
+        align-items: start;
+      }
+    }
+
+    .pricing-card {
+      display: flex;
+      flex-direction: column;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 26px 22px;
+      background: var(--cream);
+    }
+    .pricing-card.featured {
+      background: var(--white);
+      border-color: var(--violet);
+      border-width: 2px;
+      box-shadow: var(--shadow);
+    }
+
+    .pricing-badge {
+      align-self: flex-start;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      background: var(--violet);
+      color: var(--white);
+      padding: 3px 9px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+    }
+
+    .pricing-plan {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .pricing-price {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+    .pricing-price.free {
+      color: var(--green);
+      font-size: 36px;
+    }
+    .pricing-period {
+      font-size: 12.5px;
+      color: var(--text-light);
+      margin-bottom: 22px;
+    }
+
+    .pricing-feats {
+      flex: 1;
+      margin-bottom: 22px;
+    }
+    .pricing-feats li {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .pricing-feats li:last-child { border-bottom: none; }
+    .pricing-feats li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--violet);
+      margin-top: 5px;
+    }
+
+    /* ══════════════════════════════════════════
+       SECTION — FINAL CTA
+    ══════════════════════════════════════════ */
+    #final-cta {
+      background: var(--violet-soft);
+      border-top: 1px solid var(--violet-mid);
+      border-bottom: 1px solid var(--violet-mid);
+    }
+
+    .final-inner {
+      text-align: center;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    .final-h2 {
+      font-size: clamp(30px, 5vw, 54px);
+      margin-bottom: 18px;
+    }
+    .final-sub {
+      font-size: 17px;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      line-height: 1.66;
+    }
+
+    /* ══════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════ */
+    footer {
+      padding: 30px 0;
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+    @media (min-width: 768px) {
+      .footer-inner {
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+      }
+    }
+    .footer-meta {
+      font-size: 13px;
+      color: var(--text-light);
+    }
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-light);
+      transition: color .18s;
+    }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ══════════════════════════════════════════
+       SCROLL ANIMATIONS
+    ══════════════════════════════════════════ */
+    @media (prefers-reduced-motion: no-preference) {
+      .fade-up {
+        opacity: 0;
+        transform: translateY(22px);
+        transition: opacity .62s ease, transform .62s ease;
+      }
+      .fade-up.in {
+        opacity: 1;
+        transform: none;
+      }
+      .fade-up[data-delay="1"] { transition-delay: .10s; }
+      .fade-up[data-delay="2"] { transition-delay: .20s; }
+      .fade-up[data-delay="3"] { transition-delay: .30s; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════
+       NAVIGATION
+  ════════════════════════════════════════ -->
+  <nav class="nav">
+    <div class="wordmark">Prev<span class="wordmark-accent">ly</span></div>
+    <button class="nav-cta btn" onclick="goToFinalCTA()">Rejoindre la bêta</button>
+  </nav>
+
+
+  <!-- ════════════════════════════════════════
+       HERO
+  ════════════════════════════════════════ -->
+  <section id="hero">
+    <div class="container">
+
+      <div class="hero-badge">Co-pilote financier IA</div>
+
+      <h1 class="hero-h1">
+        Votre trésorerie,<br>
+        <em>sous contrôle.</em><br>
+        En permanence.
+      </h1>
+
+      <p class="hero-sub">
+        Prevly prédit vos flux sur 90 jours, détecte les tensions avant
+        qu'elles arrivent, et vous conseille comme un CFO — sans le prix d'un CFO.
+      </p>
+
+      <!-- Dashboard Demo -->
+      <div class="dashboard fade-up">
+        <div class="dash-topbar"></div>
+        <div class="dash-head">
+          <div class="dash-head-logo">
+            Prev<span class="wordmark-accent">ly</span>
+          </div>
+          <div class="dash-live">
+            <div class="dash-live-dot"></div>
+            En direct
+          </div>
+        </div>
+        <div class="dash-body">
+          <div class="dash-metrics">
+            <div class="dash-metric">
+              <div class="dash-metric-label">Solde actuel</div>
+              <div class="dash-metric-val">13 100 €</div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-label">Prévision J+30</div>
+              <div class="dash-metric-val">10 200 €</div>
+              <div class="dash-metric-delta">
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
+                  <path d="M4.5 7L1 2.5h7L4.5 7z" fill="currentColor"/>
+                </svg>
+                &minus;22 % vs. aujourd'hui
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-score">
+            <div class="dash-score-head">
+              <span class="dash-score-label">Score Santé Financière</span>
+              <span class="dash-score-val">68<sub> /100</sub></span>
+            </div>
+            <div class="dash-track">
+              <div class="dash-fill"></div>
+            </div>
+            <div class="dash-score-legend">
+              <span>Fragile</span>
+              <span>Vigilance</span>
+              <span>Solide</span>
+            </div>
+          </div>
+
+          <div class="dash-alert">
+            <svg class="dash-alert-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 1.5 1.2 12.5h11.6L7 1.5z" stroke="#B05A1E" stroke-width="1.25" stroke-linejoin="round"/>
+              <path d="M7 5.8v3.2" stroke="#B05A1E" stroke-width="1.25" stroke-linecap="round"/>
+              <circle cx="7" cy="10.5" r=".65" fill="#B05A1E"/>
+            </svg>
+            <div class="dash-alert-text">
+              <strong>Alerte :</strong> échéance URSSAF estimée dans 18 jours &mdash; provisionnez 2 340 &euro;.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Form -->
+      <div class="form-wrap" id="wrap-hero">
+        <form class="email-form" id="form-hero" novalidate>
+          <input
+            type="email"
+            class="email-input"
+            id="input-hero"
+            placeholder="votre@email.fr"
+            autocomplete="email"
+            aria-label="Adresse email"
+          />
+          <button type="submit" class="btn btn-primary">Rejoindre la bêta</button>
+        </form>
+        <p class="error-msg" id="err-hero" role="alert">Adresse email invalide.</p>
+        <div class="success-msg" id="ok-hero" role="status">
+          Vous êtes sur la liste &mdash; on vous contacte très vite.
+        </div>
+        <div class="reassurance" aria-label="Garanties">
+          <span>Gratuit 30 jours</span>
+          <span>Sans carte bancaire</span>
+          <span>Accès bêta limité</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════
+       PROBLEM
+  ════════════════════════════════════════ -->
+  <section id="problem">
+    <div class="container">
+      <h2 class="problem-h2 fade-up">
+        78&nbsp;% des TPE rencontrent des difficultés de trésorerie.
+        La plupart ne le voient pas venir.
+      </h2>
+      <div class="stats-grid">
+        <div class="stat-block fade-up" data-delay="1">
+          <div class="stat-num">4,2M</div>
+          <p class="stat-desc">
+            de TPE et indépendants en France gèrent leur activité
+            sans outil de pilotage structuré.
+          </p>
+        </div>
+        <div class="stat-block fade-up" data-delay="2">
+          <div class="stat-num">72&nbsp;%</div>
+          <p class="stat-desc">
+            pilotent leur trésorerie à vue — sur Excel, dans un tableur
+            improvisé ou de mémoire.
+          </p>
+        </div>
+        <div class="stat-block fade-up" data-delay="3">
+          <div class="stat-num">+15&nbsp;%</div>
+          <p class="stat-desc">
+            de défaillances d'entreprises en 2025. La tension de trésorerie
+            en est la première cause.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════
+       HOW IT WORKS
+  ════════════════════════════════════════ -->
+  <section id="how">
+    <div class="container">
+      <p class="label fade-up">Mise en route</p>
+      <h2 class="how-h2 fade-up">Opérationnel en 10 minutes.</h2>
+      <div class="steps">
+        <div class="step fade-up">
+          <div class="step-n">01</div>
+          <div class="step-body">
+            <h3>Importez vos relevés bancaires</h3>
+            <p>
+              Glissez vos relevés des 6 derniers mois en CSV. Prevly prend en charge
+              tous les exports standards des banques françaises — aucun reformatage nécessaire.
+            </p>
+          </div>
+        </div>
+        <div class="step fade-up">
+          <div class="step-n">02</div>
+          <div class="step-body">
+            <h3>Obtenez votre score et vos prévisions</h3>
+            <p>
+              En moins d'une minute, Prevly analyse vos flux, calcule votre score
+              de santé financière et génère vos prévisions sur 30, 60 et 90 jours.
+            </p>
+          </div>
+        </div>
+        <div class="step fade-up">
+          <div class="step-n">03</div>
+          <div class="step-body">
+            <h3>Recevez des alertes, posez vos questions</h3>
+            <p>
+              Prevly vous prévient avant chaque tension. Posez vos questions
+              à votre AI CFO — URSSAF, TVA, cotisations — en français, sans jargon comptable.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════
+       FEATURES
+  ════════════════════════════════════════ -->
+  <section id="features">
+    <div class="container">
+      <h2 class="features-h2 fade-up">Tout ce dont un indépendant a besoin pour piloter.</h2>
+      <div class="features-grid">
+        <div class="feature fade-up">
+          <div class="feature-idx">01</div>
+          <h3>Score de santé financière en temps réel</h3>
+          <p>Un chiffre entre 0 et 100, recalculé à chaque import. Vous savez immédiatement où vous en êtes.</p>
+        </div>
+        <div class="feature fade-up" data-delay="1">
+          <div class="feature-idx">02</div>
+          <h3>Prévision trésorerie IA 30 — 90 jours</h3>
+          <p>Modèle entraîné sur vos propres flux, pas des moyennes sectorielles génériques.</p>
+        </div>
+        <div class="feature fade-up" data-delay="2">
+          <div class="feature-idx">03</div>
+          <h3>Alertes proactives avant chaque tension</h3>
+          <p>URSSAF, TVA, loyer, charges fixes — Prevly anticipe et vous prévient avant chaque échéance.</p>
+        </div>
+        <div class="feature fade-up">
+          <div class="feature-idx">04</div>
+          <h3>AI CFO fiscal français</h3>
+          <p>Posez vos questions en langage naturel. Votre AI CFO connaît le droit fiscal et les cotisations sociales.</p>
+        </div>
+        <div class="feature fade-up" data-delay="1">
+          <div class="feature-idx">05</div>
+          <h3>Suivi des factures et probabilité d'encaissement</h3>
+          <p>Chaque facture en attente est scorée. Prevly vous dit lesquelles risquent de ne pas rentrer.</p>
+        </div>
+        <div class="feature fade-up" data-delay="2">
+          <div class="feature-idx">06</div>
+          <h3>Connexion bancaire automatique</h3>
+          <p>Import CSV disponible dès la bêta. Connexion directe aux banques françaises en V2.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════
+       COMPARISON
+  ════════════════════════════════════════ -->
+  <section id="comparison">
+    <div class="container">
+      <h2 class="comparison-h2 fade-up">
+        Pourquoi Prevly plutôt qu'Excel ou votre expert-comptable&nbsp;?
+      </h2>
+      <div class="comp-blocks">
+        <div class="comp-block fade-up">
+          <div class="comp-before">Excel vous dit où vous en êtes.</div>
+          <div class="comp-after">Prevly vous dit où vous serez.</div>
+        </div>
+        <div class="comp-block fade-up">
+          <div class="comp-before">Votre expert-comptable intervient après.</div>
+          <div class="comp-after">Prevly alerte avant.</div>
+        </div>
+        <div class="comp-block fade-up">
+          <div class="comp-before">Agicap coûte 149 &euro;+ et cible les PME.</div>
+          <div class="comp-after">Prevly est pensé pour les solos et TPE, dès 79 &euro;/mois.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════
+       PRICING
+  ════════════════════════════════════════ -->
+  <section id="pricing">
+    <div class="container">
+      <h2 class="pricing-h2 fade-up">Simple, transparent, sans surprise.</h2>
+      <p class="pricing-sub fade-up">Commencez gratuitement. Aucune carte bancaire requise.</p>
+      <div class="pricing-grid">
+
+        <div class="pricing-card fade-up">
+          <div class="pricing-plan">Trial</div>
+          <div class="pricing-price free">Gratuit</div>
+          <p class="pricing-period">30 jours &middot; accès Pro complet &middot; sans CB</p>
+          <ul class="pricing-feats">
+            <li>Score de santé financière</li>
+            <li>Prévisions 30 — 90 jours</li>
+            <li>Alertes URSSAF et TVA</li>
+            <li>AI CFO fiscal français</li>
+            <li>Import CSV illimité</li>
+          </ul>
+          <button class="btn btn-outline btn-full" onclick="goToFinalCTA()">Rejoindre la bêta</button>
+        </div>
+
+        <div class="pricing-card featured fade-up" data-delay="1">
+          <div class="pricing-badge">Recommandé</div>
+          <div class="pricing-plan">Pro</div>
+          <div class="pricing-price">79 &euro;</div>
+          <p class="pricing-period">par mois &middot; sans engagement</p>
+          <ul class="pricing-feats">
+            <li>Tout ce qui est inclus dans Trial</li>
+            <li>12 scénarios de prévision</li>
+            <li>Historique illimité</li>
+            <li>Export comptable PDF</li>
+            <li>Support prioritaire</li>
+          </ul>
+          <button class="btn btn-filled btn-full" onclick="goToFinalCTA()">Rejoindre la bêta</button>
+        </div>
+
+        <div class="pricing-card fade-up" data-delay="2">
+          <div class="pricing-plan">Business</div>
+          <div class="pricing-price">119 &euro;</div>
+          <p class="pricing-period">par mois &middot; sans engagement</p>
+          <ul class="pricing-feats">
+            <li>Tout ce qui est inclus dans Pro</li>
+            <li>Expert humain mensuel (1 h)</li>
+            <li>Prévisions sur 12 mois</li>
+            <li>Connexion bancaire directe (V2)</li>
+            <li>API et intégrations</li>
+          </ul>
+          <button class="btn btn-outline btn-full" onclick="goToFinalCTA()">Rejoindre la bêta</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════
+       FINAL CTA
+  ════════════════════════════════════════ -->
+  <section id="final-cta">
+    <div class="container">
+      <div class="final-inner">
+        <h2 class="final-h2 fade-up">Votre trésorerie<br>mérite mieux qu'Excel.</h2>
+        <p class="final-sub fade-up">
+          Rejoignez les premiers indépendants à tester Prevly.
+          Accès bêta limité.
+        </p>
+        <div class="form-wrap fade-up" id="wrap-final">
+          <form class="email-form" id="form-final" novalidate>
+            <input
+              type="email"
+              class="email-input"
+              id="input-final"
+              placeholder="votre@email.fr"
+              autocomplete="email"
+              aria-label="Adresse email"
+            />
+            <button type="submit" class="btn btn-primary">Accès anticipé gratuit</button>
+          </form>
+          <p class="error-msg" id="err-final" role="alert">Adresse email invalide.</p>
+          <div class="success-msg" id="ok-final" role="status">
+            Vous êtes sur la liste &mdash; on vous contacte très vite.
+          </div>
+          <div class="reassurance">
+            <span>Gratuit 30 jours</span>
+            <span>Sans carte bancaire</span>
+            <span>Accès bêta limité</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════ -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="wordmark">Prev<span class="wordmark-accent">ly</span></div>
+        <p class="footer-meta">&copy; 2026 Prevly &middot; contact@prevly.fr</p>
+        <div class="footer-links">
+          <a href="#">Mentions légales</a>
+          <a href="#">RGPD</a>
+          <a href="#">CGU</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ════════════════════════════════════════
+       JAVASCRIPT
+  ════════════════════════════════════════ -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── Storage ── */
+      var STORE_KEY = 'prevly_beta_v1';
+
+      function getSignups() {
+        try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }
+        catch (e) { return []; }
+      }
+
+      function addSignup(email) {
+        var list = getSignups();
+        var exists = list.some(function (s) { return s.email === email; });
+        if (!exists) {
+          list.push({ email: email, ts: Date.now() });
+          localStorage.setItem(STORE_KEY, JSON.stringify(list));
+        }
+        return list.length;
+      }
+
+      /* ── Validation ── */
+      function isValidEmail(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+      }
+
+      /* ── Form state: sync both forms ── */
+      function setAllSuccess() {
+        ['hero', 'final'].forEach(function (id) {
+          var form = document.getElementById('form-' + id);
+          var err  = document.getElementById('err-' + id);
+          var ok   = document.getElementById('ok-' + id);
+          if (form) { form.style.display = 'none'; }
+          if (err)  { err.classList.remove('visible'); }
+          if (ok)   { ok.classList.add('visible'); }
+        });
+      }
+
+      function handleSubmit(id) {
+        return function (e) {
+          e.preventDefault();
+
+          var input = document.getElementById('input-' + id);
+          var err   = document.getElementById('err-' + id);
+          var val   = input.value.trim();
+
+          /* Clear previous state */
+          input.classList.remove('is-error');
+          err.classList.remove('visible');
+
+          if (!isValidEmail(val)) {
+            input.classList.add('is-error');
+            err.classList.add('visible');
+            input.focus();
+            return;
+          }
+
+          var total = addSignup(val);
+          setAllSuccess();
+          console.info('[Prevly] Inscription enregistrée :', val, '| Total :', total);
+        };
+      }
+
+      /* ── Attach form handlers ── */
+      ['hero', 'final'].forEach(function (id) {
+        var form = document.getElementById('form-' + id);
+        if (form) { form.addEventListener('submit', handleSubmit(id)); }
+      });
+
+      /* ── Restore success state on reload ── */
+      if (getSignups().length > 0) {
+        setAllSuccess();
+      }
+
+      /* ── Navigation helper ── */
+      window.goToFinalCTA = function () {
+        var section = document.getElementById('final-cta');
+        if (!section) return;
+        section.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(function () {
+          var ok = document.getElementById('ok-final');
+          var input = document.getElementById('input-final');
+          if (input && ok && !ok.classList.contains('visible')) {
+            input.focus();
+          }
+        }, 680);
+      };
+
+      /* ── Scroll animations ── */
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReduced) {
+        /* Instantly reveal everything */
+        document.querySelectorAll('.fade-up').forEach(function (el) {
+          el.classList.add('in');
+        });
+      } else {
+        /* Hero elements: trigger on load */
+        var heroEls = document.querySelectorAll('#hero .fade-up');
+        requestAnimationFrame(function () {
+          setTimeout(function () {
+            heroEls.forEach(function (el) { el.classList.add('in'); });
+          }, 80);
+        });
+
+        /* All other elements: IntersectionObserver */
+        var obs = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in');
+              obs.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.13 });
+
+        document.querySelectorAll('.fade-up').forEach(function (el) {
+          if (!el.closest('#hero')) { obs.observe(el); }
+        });
+      }
+
+    }());
+  </script>
+
+</body>
+</html>
