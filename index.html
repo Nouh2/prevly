@@ -935,6 +935,10 @@
   <section id="hero">
     <div class="container">
 
+      <div class="urgency" id="urgency-top">
+        <span class="urgency-dot"></span>
+        <span>Il reste <strong id="spots-top">47</strong> places pour la bêta fermée</span>
+      </div>
       <div class="hero-badge">Co-pilote financier</div>
 
       <h1 class="hero-h1">
@@ -1438,7 +1442,7 @@
 
       function updateUrgencyCounters(spots) {
         var n = spots !== undefined ? spots : getRemainingSpots();
-        ['hero', 'final'].forEach(function (id) {
+        ['top', 'hero', 'final'].forEach(function (id) {
           var el = document.getElementById('spots-' + id);
           if (el) { el.textContent = n; }
         });
