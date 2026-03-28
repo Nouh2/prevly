@@ -184,6 +184,13 @@
       box-shadow: 0 8px 24px rgba(91,79,232,.24);
     }
     .btn-primary:active { transform: none; box-shadow: none; }
+    .btn-primary.is-loading,
+    .btn-primary:disabled {
+      cursor: wait;
+      opacity: .78;
+      transform: none;
+      box-shadow: 0 8px 20px rgba(91,79,232,.14);
+    }
 
     .btn-outline {
       background: transparent;
@@ -903,7 +910,7 @@
   <section id="hero">
     <div class="container">
 
-      <div class="hero-badge">Co-pilote financier IA</div>
+      <div class="hero-badge">Co-pilote financier</div>
 
       <h1 class="hero-h1">
         Votre trésorerie,<br>
