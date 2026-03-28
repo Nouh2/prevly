@@ -293,6 +293,31 @@
     .reassurance span:last-child { border-right: none; }
 
     /* ══════════════════════════════════════════
+       URGENCY COUNTER
+    ══════════════════════════════════════════ */
+    .urgency {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--orange);
+      margin-bottom: 14px;
+    }
+    .urgency-dot {
+      flex-shrink: 0;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--orange);
+      animation: live-pulse 1.8s ease-in-out infinite;
+    }
+    .urgency strong {
+      font-weight: 700;
+    }
+
+    /* ══════════════════════════════════════════
        HERO
     ══════════════════════════════════════════ */
     #hero {
@@ -982,6 +1007,10 @@
       </div>
 
       <!-- Hero Form -->
+      <div class="urgency" id="urgency-hero">
+        <span class="urgency-dot"></span>
+        <span>Il reste <strong id="spots-hero">47</strong> places pour la bêta fermée</span>
+      </div>
       <div class="form-wrap" id="wrap-hero">
         <form class="email-form" id="form-hero" novalidate>
           <input
@@ -1224,6 +1253,10 @@
           Rejoignez les premiers indépendants à tester Prevly.
           Accès bêta limité.
         </p>
+        <div class="urgency fade-up" id="urgency-final">
+          <span class="urgency-dot"></span>
+          <span>Il reste <strong id="spots-final">47</strong> places pour la bêta fermée</span>
+        </div>
         <div class="form-wrap fade-up" id="wrap-final">
           <form class="email-form" id="form-final" novalidate>
             <input
@@ -1387,6 +1420,58 @@
         });
       }
 
+      /* ── Urgency counter ── */
+      var TOTAL_SPOTS    = 50;
+      var BASE_REMAINING = 47;
+      var LAUNCH_TS      = new Date('2026-03-28').getTime();
+
+      function getRemainingSpots(remoteCount) {
+        // Natural decay: ~2 spots per day since launch
+        var daysSinceLaunch = Math.max(0, Math.floor((Date.now() - LAUNCH_TS) / 86400000));
+        var naturalDecay    = Math.min(daysSinceLaunch * 2, 30);
+        var localSignups    = getSignups().length;
+        var base = (typeof remoteCount === 'number')
+          ? Math.max(0, TOTAL_SPOTS - remoteCount)
+          : BASE_REMAINING - naturalDecay - localSignups;
+        return Math.max(base - (typeof remoteCount === 'number' ? 0 : 0), 3);
+      }
+
+      function updateUrgencyCounters(spots) {
+        var n = spots !== undefined ? spots : getRemainingSpots();
+        ['hero', 'final'].forEach(function (id) {
+          var el = document.getElementById('spots-' + id);
+          if (el) { el.textContent = n; }
+        });
+      }
+
+      function hideUrgencyCounters() {
+        ['hero', 'final'].forEach(function (id) {
+          var el = document.getElementById('urgency-' + id);
+          if (el) { el.style.display = 'none'; }
+        });
+      }
+
+      // Fetch real count from Google Sheet (non-blocking)
+      function fetchRemoteCount() {
+        if (!ENDPOINT_READY) { return; }
+        var callbackName = 'prevlyCountCallback_' + Date.now();
+        var script = document.createElement('script');
+        var tid = setTimeout(function () {
+          if (script.parentNode) { script.parentNode.removeChild(script); }
+          try { delete window[callbackName]; } catch (e) {}
+        }, 6000);
+        window[callbackName] = function (payload) {
+          clearTimeout(tid);
+          if (script.parentNode) { script.parentNode.removeChild(script); }
+          try { delete window[callbackName]; } catch (e) {}
+          if (payload && typeof payload.count === 'number') {
+            updateUrgencyCounters(getRemainingSpots(payload.count));
+          }
+        };
+        script.src = WAITLIST_ENDPOINT + '?action=count&callback=' + encodeURIComponent(callbackName);
+        document.body.appendChild(script);
+      }
+
       /* ── Form state: sync both forms ── */
       function setAllSuccess() {
         ['hero', 'final'].forEach(function (id) {
@@ -1395,6 +1480,7 @@
           if (parts.err)  { parts.err.classList.remove('visible'); }
           if (parts.ok)   { parts.ok.classList.add('visible'); }
         });
+        hideUrgencyCounters();
       }
 
       function handleSubmit(id) {
@@ -1451,6 +1537,10 @@
       if (getSignups().length > 0) {
         setAllSuccess();
       }
+
+      /* ── Init urgency counter ── */
+      updateUrgencyCounters();   // immediate render with local estimate
+      fetchRemoteCount();        // async refresh from Google Sheet
 
       /* ── Navigation helper ── */
       window.goToFinalCTA = function () {
