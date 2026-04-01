@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import dynamic from "next/dynamic";
 import type { DashboardData } from "@/types";
 import { parseCSVContent, readFileAsText } from "@/lib/csvParser";
 import { buildDashboardData, formatCurrency, formatDate, formatDateShort, forecastColor } from "@/lib/analytics";
-
-const FlowChart = dynamic(() => import("./FlowChart"), { ssr: false });
+import FlowChart from "./FlowChart";
 
 const STORAGE_KEY = "prevly_dashboard_v1";
 
