@@ -21,6 +21,8 @@ ul { list-style: none; }
    DESIGN TOKENS
 ══════════════════════════════════════════ */
 :root {
+  --font-playfair:  "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif;
+  --font-epilogue:  "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --cream:          #FAF7F2;
   --text:           #1A1A1A;
   --text-muted:     #666666;
