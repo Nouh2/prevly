@@ -1426,3 +1426,280 @@ footer {
   transition: background 0.18s;
 }
 .db-btn-confirm:hover { background: var(--violet-hover); }
+
+/* ──────────────────────────────────────────────
+   SMART ALERTS (red / orange / blue)
+────────────────────────────────────────────── */
+.db-smart-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.db-smart-alert {
+  border-radius: var(--r);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.db-smart-alert.red {
+  background: #FEF5F5;
+  border: 1px solid #FACACA;
+}
+.db-smart-alert.orange {
+  background: #FFF8F3;
+  border: 1px solid var(--orange-border);
+}
+.db-smart-alert.blue {
+  background: #F3F6FF;
+  border: 1px solid #C7D4F8;
+}
+
+.db-smart-alert-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.db-smart-alert-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.db-smart-alert.red .db-smart-alert-icon { color: var(--red); }
+.db-smart-alert.orange .db-smart-alert-icon { color: var(--orange); }
+.db-smart-alert.blue .db-smart-alert-icon { color: var(--violet); }
+
+.db-smart-alert-text {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.db-smart-alert-action {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  padding-left: 26px; /* indent under icon */
+}
+.db-smart-alert.red .db-smart-alert-action { color: var(--red); }
+.db-smart-alert.orange .db-smart-alert-action { color: var(--orange); }
+.db-smart-alert.blue .db-smart-alert-action { color: var(--violet); }
+
+/* ──────────────────────────────────────────────
+   SCORE EXPLANATION
+────────────────────────────────────────────── */
+.db-score-why {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.db-score-why-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+
+.db-score-why-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.db-score-why-list li {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding-left: 12px;
+  position: relative;
+}
+.db-score-why-list li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  color: var(--violet);
+  font-weight: 700;
+}
+
+/* ──────────────────────────────────────────────
+   RECURRING CHARGES SUMMARY (below forecast)
+────────────────────────────────────────────── */
+.db-recurring-summary {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.db-recurring-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 8px;
+  letter-spacing: .03em;
+}
+
+.db-recurring-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.db-recurring-chip {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: var(--cream);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.db-recurring-more {
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* ──────────────────────────────────────────────
+   DEADLINES CARD
+────────────────────────────────────────────── */
+.db-deadlines-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.db-deadline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-light);
+  gap: 12px;
+}
+.db-deadline-item:last-child { border-bottom: none; }
+
+.db-deadline-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.db-deadline-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 70px;
+}
+
+.db-deadline-label {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.db-deadline-amount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--red);
+  white-space: nowrap;
+}
+
+.db-deadline-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.db-deadline-balance-label {
+  font-size: 10px;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+.db-deadline-balance {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.db-deadline-balance.green { color: #3DAA7A; }
+.db-deadline-balance.orange { color: var(--orange); }
+.db-deadline-balance.red { color: var(--red); }
+
+.db-deadline-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #FEF5F5;
+  border: 1px solid #FACACA;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.db-deadline-warning svg {
+  flex-shrink: 0;
+  color: var(--red);
+  margin-top: 2px;
+}
+
+/* ──────────────────────────────────────────────
+   RECOMMENDATIONS CARD
+────────────────────────────────────────────── */
+.db-reco-card {
+  background: #F0EDE6;
+  border-color: #E0D9CF;
+}
+
+.db-reco-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.db-reco-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.db-reco-action {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+.db-reco-impact {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ──────────────────────────────────────────────
+   CHART FORECAST LABEL
+────────────────────────────────────────────── */
+.db-chart-forecast-label {
+  font-size: 11px;
+  color: var(--text-light);
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
+}
