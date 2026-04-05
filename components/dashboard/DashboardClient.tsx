@@ -297,32 +297,8 @@ function DashboardView({ data }: { data: DashboardData }) {
         <div className="db-smart-alerts">
           {alerts.map((alert, i) => (
             <div key={i} className={`db-smart-alert ${alert.severity}`}>
-              <div className="db-smart-alert-body">
-                <div className="db-smart-alert-icon" aria-hidden="true">
-                  {alert.severity === "red" && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M8 5v3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      <circle cx="8" cy="11" r=".75" fill="currentColor"/>
-                    </svg>
-                  )}
-                  {alert.severity === "orange" && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M8 1.5 1.5 14.5h13L8 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                      <path d="M8 6v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      <circle cx="8" cy="12" r=".75" fill="currentColor"/>
-                    </svg>
-                  )}
-                  {alert.severity === "blue" && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M8 7.5v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      <circle cx="8" cy="5" r=".75" fill="currentColor"/>
-                    </svg>
-                  )}
-                </div>
-                <p className="db-smart-alert-text">{alert.message}</p>
-              </div>
+              <p className="db-smart-alert-title">{alert.title}</p>
+              <p className="db-smart-alert-text">{alert.message}</p>
               {alert.action && (
                 <span className="db-smart-alert-action">{alert.action} →</span>
               )}

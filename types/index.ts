@@ -36,6 +36,7 @@ export interface Forecast {
 
 export interface Alert {
   severity: Severity;
+  title: string;
   message: string;
   action?: string;
 }

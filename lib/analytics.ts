@@ -384,7 +384,8 @@ export function computeAlerts(
   monthlyFlows: MonthlyFlow[],
   recurringCharges: RecurringCharge[],
   deadlines: Deadline[],
-  avgMonthlyCharges: number
+  avgMonthlyCharges: number,
+  referenceDate: Date
 ): Alert[] {
   const alerts: Alert[] = [];
   const recent = monthlyFlows.slice(-3);
@@ -392,33 +393,36 @@ export function computeAlerts(
   // RED: upcoming deadline pushes balance below 1x monthly charges
   const criticalDeadline = deadlines.find((d) => d.balanceStatus === "red");
   if (criticalDeadline) {
-    const daysUntil = Math.round(
-      (criticalDeadline.date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    );
-    // Find the next deadline after the critical one to mention it
-    const nextDeadline = deadlines.find((d) => d.date > criticalDeadline.date);
-    let msg = `Votre ${shortLabel(criticalDeadline.label)} de ${formatCurrency(Math.abs(criticalDeadline.amount))} tombe dans ${daysUntil} jour${daysUntil > 1 ? "s" : ""}. Votre solde estimé ce jour sera de ${formatCurrency(criticalDeadline.estimatedBalance)} — insuffisant pour couvrir vos charges courantes.`;
-    if (nextDeadline) {
-      msg = `Votre ${shortLabel(criticalDeadline.label)} de ${formatCurrency(Math.abs(criticalDeadline.amount))} tombe dans ${daysUntil} jour${daysUntil > 1 ? "s" : ""}. Votre solde estimé sera de ${formatCurrency(criticalDeadline.estimatedBalance)}, insuffisant pour couvrir ${shortLabel(nextDeadline.label)} (${formatCurrency(Math.abs(nextDeadline.amount))}).`;
-    }
-    alerts.push({ severity: "red", message: msg, action: "Agissez maintenant" });
+    alerts.push({
+      severity: "red",
+      title: "Risque de trésorerie critique",
+      message: `Votre ${shortLabel(criticalDeadline.label)} de ${formatCurrency(Math.abs(criticalDeadline.amount))} tombe le ${formatDateDeadline(criticalDeadline.date)}. Votre solde estimé ce jour sera de ${formatCurrency(criticalDeadline.estimatedBalance)} — soit moins d'un mois de charges. Anticipez dès maintenant.`,
+      action: "Agissez maintenant",
+    });
   }
 
-  // ORANGE: negative trend for 3+ months + runway impact
-  if (recent.length >= 3 && recent.every((m) => m.net < 0)) {
+  // ORANGE: negative net trend for 3+ consecutive months OR J+90 drops >20% vs current
+  const negTrend = recent.length >= 3 && recent.every((m) => m.net < 0);
+  const j90drop = currentBalance > 0 && forecast.j90 < currentBalance * 0.8;
+
+  if (negTrend || j90drop) {
     const currentRunway =
       avgMonthlyCharges > 0 ? currentBalance / avgMonthlyCharges : 0;
     const futureRunway =
       avgMonthlyCharges > 0 ? forecast.j90 / avgMonthlyCharges : 0;
     const negMonths = countConsecutiveNegative(monthlyFlows);
+    const msg = negTrend
+      ? `Votre trésorerie nette est en baisse depuis ${negMonths} mois. À ce rythme votre runway passe de ${currentRunway.toFixed(1)} à ${Math.max(0, futureRunway).toFixed(1)} mois d'ici 90 jours.`
+      : `Votre solde estimé à J+90 (${formatCurrency(forecast.j90)}) est inférieur de plus de 20% à votre solde actuel. Votre runway passe de ${currentRunway.toFixed(1)} à ${Math.max(0, futureRunway).toFixed(1)} mois.`;
     alerts.push({
       severity: "orange",
-      message: `Vos flux nets sont en baisse depuis ${negMonths} mois consécutifs. À ce rythme votre runway passe de ${currentRunway.toFixed(1)} à ${Math.max(0, futureRunway).toFixed(1)} mois d'ici 90 jours.`,
+      title: "Tendance de trésorerie à surveiller",
+      message: msg,
       action: "Identifiez les postes à réduire",
     });
   }
 
-  // BLUE: comfortable balance + fiscal deadline coming
+  // BLUE: comfortable balance (>3× monthly charges) + quarterly fiscal deadline within 60 days
   const nextQuarterlyCharge = recurringCharges.find(
     (c) => c.frequency === "quarterly"
   );
@@ -430,18 +434,19 @@ export function computeAlerts(
     const nextDate = new Date(nextQuarterlyCharge.lastSeen);
     nextDate.setMonth(nextDate.getMonth() + 3);
     const daysUntil = Math.round(
-      (nextDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      (nextDate.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     if (daysUntil > 0 && daysUntil <= 60) {
       alerts.push({
         severity: "blue",
-        message: `Votre solde est confortable ce mois-ci. C'est le bon moment pour provisionner votre ${shortLabel(nextQuarterlyCharge.label)} du ${formatDateDeadline(nextDate)} — soit ${formatCurrency(Math.abs(nextQuarterlyCharge.amount))} à mettre de côté maintenant.`,
+        title: "Opportunité de provisionnement",
+        message: `Votre trésorerie est confortable. Provisionnez dès maintenant votre ${shortLabel(nextQuarterlyCharge.label)} du ${formatDateDeadline(nextDate)} — soit ${formatCurrency(Math.abs(nextQuarterlyCharge.amount))} à mettre de côté.`,
         action: "Provisionner maintenant",
       });
     }
   }
 
-  // Keep max 3, sorted by severity (red first)
+  // Max 3, red → orange → blue order
   return alerts.slice(0, 3);
 }
 
@@ -473,12 +478,30 @@ export function computeRecommendations(
   const recs: { action: string; impact: string }[] = [];
   const recent = monthlyFlows.slice(-6);
 
-  // 1. Charges > 50% of income
+  // 1. Charges > 50% of income — name the actual top recurring lines
   if (avgMonthlyIncome > 0 && avgMonthlyCharges > 0) {
     const chargeRatio = Math.round((avgMonthlyCharges / avgMonthlyIncome) * 100);
     if (chargeRatio > 50) {
+      const top2 = recurringCharges.slice(0, 2).map((c) => ({
+        label: shortLabel(c.label),
+        monthly: Math.round(
+          c.frequency === "monthly" ? Math.abs(c.amount) : Math.abs(c.amount) / 3
+        ),
+      }));
+
+      let action: string;
+      if (top2.length >= 2) {
+        const totalTop2 = top2[0].monthly + top2[1].monthly;
+        const pct = Math.round((totalTop2 / avgMonthlyCharges) * 100);
+        action = `${top2[0].label} (${formatCurrency(top2[0].monthly)}/mois) et ${top2[1].label} (${formatCurrency(top2[1].monthly)}/mois) représentent ${pct}% de vos charges fixes. Ce sont vos deux seuls leviers réels pour améliorer votre runway.`;
+      } else if (top2.length === 1) {
+        action = `${top2[0].label} (${formatCurrency(top2[0].monthly)}/mois) est votre principale charge fixe — ${Math.round((top2[0].monthly / avgMonthlyCharges) * 100)}% de vos charges totales.`;
+      } else {
+        action = `Vos charges fixes absorbent ${chargeRatio}% de vos revenus moyens. Identifiez les postes compressibles pour améliorer votre runway.`;
+      }
+
       recs.push({
-        action: `Vos charges fixes absorbent ${chargeRatio}% de vos revenus moyens. Identifiez les postes compressibles pour améliorer votre runway.`,
+        action,
         impact: `Réduire vos charges de 10% dégagerait environ ${formatCurrency(Math.round(avgMonthlyCharges * 0.1))} par mois.`,
       });
     }
@@ -603,7 +626,8 @@ export function buildDashboardData(transactions: Transaction[]): DashboardData {
     monthlyFlows,
     recurringCharges,
     deadlines,
-    avgMonthlyCharges
+    avgMonthlyCharges,
+    lastTransactionDate
   );
 
   const recommendations = computeRecommendations(
