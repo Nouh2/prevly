@@ -401,8 +401,9 @@ export function computeAlerts(
     });
   }
 
-  // ORANGE: negative net trend for 3+ consecutive months OR J+90 drops >20% vs current
-  const negTrend = recent.length >= 3 && recent.every((m) => m.net < 0);
+  // ORANGE: 2+ of last 3 months with negative net OR J+90 drops >20% vs current
+  const negCount = recent.filter((m) => m.net < 0).length;
+  const negTrend = recent.length >= 3 && negCount >= 2;
   const j90drop = currentBalance > 0 && forecast.j90 < currentBalance * 0.8;
 
   if (negTrend || j90drop) {
@@ -410,10 +411,12 @@ export function computeAlerts(
       avgMonthlyCharges > 0 ? currentBalance / avgMonthlyCharges : 0;
     const futureRunway =
       avgMonthlyCharges > 0 ? forecast.j90 / avgMonthlyCharges : 0;
-    const negMonths = countConsecutiveNegative(monthlyFlows);
-    const msg = negTrend
-      ? `Votre trésorerie nette est en baisse depuis ${negMonths} mois. À ce rythme votre runway passe de ${currentRunway.toFixed(1)} à ${Math.max(0, futureRunway).toFixed(1)} mois d'ici 90 jours.`
-      : `Votre solde estimé à J+90 (${formatCurrency(forecast.j90)}) est inférieur de plus de 20% à votre solde actuel. Votre runway passe de ${currentRunway.toFixed(1)} à ${Math.max(0, futureRunway).toFixed(1)} mois.`;
+    let msg: string;
+    if (j90drop) {
+      msg = `Votre solde estimé à J+90 (${formatCurrency(forecast.j90)}) est inférieur de plus de 20% à votre solde actuel. Votre runway passe de ${currentRunway.toFixed(1)} à ${Math.max(0, futureRunway).toFixed(1)} mois.`;
+    } else {
+      msg = `Vos dépenses ont dépassé vos revenus sur ${negCount} des 3 derniers mois. Votre solde couvre actuellement ${currentRunway.toFixed(1)} mois de charges — restez vigilant sur votre niveau d'activité.`;
+    }
     alerts.push({
       severity: "orange",
       title: "Tendance de trésorerie à surveiller",
@@ -422,13 +425,16 @@ export function computeAlerts(
     });
   }
 
-  // BLUE: comfortable balance (>3× monthly charges) + quarterly fiscal deadline within 60 days
+  // BLUE: balance > 2× monthly recurring fixed charges + quarterly fiscal deadline within 60 days
+  const monthlyRecurringTotal = recurringCharges.reduce((sum, c) => {
+    return sum + (c.frequency === "monthly" ? Math.abs(c.amount) : Math.abs(c.amount) / 3);
+  }, 0);
   const nextQuarterlyCharge = recurringCharges.find(
     (c) => c.frequency === "quarterly"
   );
   if (
-    avgMonthlyCharges > 0 &&
-    currentBalance > 3 * avgMonthlyCharges &&
+    monthlyRecurringTotal > 0 &&
+    currentBalance > 2 * monthlyRecurringTotal &&
     nextQuarterlyCharge
   ) {
     const nextDate = new Date(nextQuarterlyCharge.lastSeen);
