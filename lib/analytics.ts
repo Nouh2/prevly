@@ -8,7 +8,13 @@ import type {
   Deadline,
   Recommendation,
   DashboardData,
+  FiscalProfile,
 } from "@/types";
+import {
+  computeFiscalSummary,
+  computeFiscalDeadlines,
+  computeFiscalAlerts,
+} from "@/lib/fiscal";
 
 // ── Monthly flows ─────────────────────────────────────────────────────────────
 
@@ -593,7 +599,7 @@ export function formatDateDeadline(date: Date): string {
 
 // ── Full dashboard computation ────────────────────────────────────────────────
 
-export function buildDashboardData(transactions: Transaction[]): DashboardData {
+export function buildDashboardData(transactions: Transaction[], fiscalProfile?: FiscalProfile): DashboardData {
   const sorted = [...transactions].sort(
     (a, b) => a.date.getTime() - b.date.getTime()
   );
@@ -644,6 +650,43 @@ export function buildDashboardData(transactions: Transaction[]): DashboardData {
     avgMonthlyCharges,
     avgMonthlyIncome
   );
+
+  if (fiscalProfile) {
+    const fiscalSummary = computeFiscalSummary(fiscalProfile, monthlyFlows, currentBalance);
+
+    const fiscalDeadlines = computeFiscalDeadlines(
+      fiscalProfile,
+      fiscalSummary,
+      currentBalance,
+      avgMonthlyIncome,
+      avgMonthlyCharges,
+      lastTransactionDate
+    );
+
+    // Merge and sort all deadlines chronologically
+    const allDeadlines = [...deadlines, ...fiscalDeadlines].sort(
+      (a, b) => a.date.getTime() - b.date.getTime()
+    );
+
+    const fiscalAlerts = computeFiscalAlerts(fiscalSummary, currentBalance, avgMonthlyCharges);
+    // Fiscal alerts go after existing alerts; total capped at 4 to allow both types to show
+    const allAlerts = [...alerts, ...fiscalAlerts].slice(0, 4);
+
+    return {
+      transactions: sorted,
+      monthlyFlows,
+      currentBalance,
+      lastTransactionDate,
+      healthScore,
+      forecast,
+      monthlyRecurring,
+      alerts: allAlerts,
+      recurringCharges,
+      deadlines: allDeadlines,
+      recommendations,
+      fiscalSummary,
+    };
+  }
 
   return {
     transactions: sorted,

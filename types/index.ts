@@ -1,3 +1,53 @@
+// ── Fiscal profile ────────────────────────────────────────────────────────────
+
+export type LegalStatus =
+  | "auto-entrepreneur"
+  | "entreprise-individuelle"
+  | "eurl"
+  | "sasu"
+  | "sarl"
+  | "sas";
+
+export type ActivitySector =
+  | "vente-marchandises"
+  | "prestations-services"
+  | "liberal"
+  | "artisan"
+  | "restauration"
+  | "btp"
+  | "autre";
+
+export interface FiscalProfile {
+  legalStatus: LegalStatus;
+  sector: ActivitySector;
+  /** "YYYY-MM" — month and year of company creation */
+  creationMonth: string;
+}
+
+export interface FiscalSummary {
+  tvaRegime: "franchise" | "simplifie" | "normal";
+  vatRate: number;
+  tvaEstimated: number;
+  annualCAEstimate: number;
+  tvaThreshold: number;
+  /** % of TVA threshold reached (0–100) */
+  tvaThresholdPct: number;
+  isApplicable: boolean;
+  isEstimated: number;
+  beneficeImposable: number;
+  cotisationsEstimated: number;
+  cotisationsRate: number;
+  /** TVA + IS acompte + cotisations×3 for the quarter */
+  totalQuarterlyProvisioning: number;
+  monthlySuggested: number;
+  isFirstYear: boolean;
+  acreApplicable: boolean;
+  /** Monthly savings from ACRE reduction */
+  acreSavings: number;
+}
+
+// ── Transactions ──────────────────────────────────────────────────────────────
+
 export interface Transaction {
   date: Date;
   label: string;
@@ -58,6 +108,8 @@ export interface Deadline {
   amount: number;
   estimatedBalance: number;
   balanceStatus: "green" | "orange" | "red";
+  isFiscal?: boolean;
+  fiscalTag?: "TVA" | "IS" | "Cotisations";
 }
 
 export interface Recommendation {
@@ -78,6 +130,7 @@ export interface DashboardData {
   recurringCharges: RecurringCharge[];
   deadlines: Deadline[];
   recommendations: Recommendation[];
+  fiscalSummary?: FiscalSummary;
 }
 
 /** Raw parsed CSV row before column mapping */

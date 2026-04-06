@@ -1698,3 +1698,374 @@ footer {
   margin-top: 8px;
   font-style: italic;
 }
+
+/* ══════════════════════════════════════════
+   FISCAL ONBOARDING WIZARD
+══════════════════════════════════════════ */
+.fiscal-onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px 64px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.fiscal-onboarding-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.fiscal-onboarding-steps {
+  display: flex;
+  gap: 8px;
+}
+
+.fiscal-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.fiscal-step-dot.active { background: var(--violet); }
+.fiscal-step-dot.done { background: var(--violet-mid); }
+
+.fiscal-onboarding-sub {
+  font-size: 12px;
+  color: var(--text-light);
+  letter-spacing: .04em;
+}
+
+.fiscal-onboarding-step {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.fiscal-onboarding-title {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+}
+
+.fiscal-onboarding-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.65;
+  margin-top: -12px;
+  max-width: 400px;
+}
+
+/* Choice grid */
+.fiscal-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+@media (min-width: 480px) {
+  .fiscal-choice-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.fiscal-choice-btn {
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 13px 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  line-height: 1.35;
+}
+.fiscal-choice-btn:hover {
+  border-color: var(--violet);
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+.fiscal-choice-btn.selected {
+  border-color: var(--violet);
+  background: var(--violet-soft);
+  color: var(--violet);
+  font-weight: 600;
+}
+
+/* Date row */
+.fiscal-date-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.fiscal-select {
+  flex: 1;
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  font-size: 14px;
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text);
+  cursor: pointer;
+  appearance: auto;
+  transition: border-color 0.15s;
+}
+.fiscal-select:focus {
+  outline: none;
+  border-color: var(--violet);
+}
+
+/* Submit button */
+.fiscal-submit-btn {
+  width: 100%;
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 24px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: var(--violet);
+  color: var(--white);
+  cursor: pointer;
+  transition: background 0.18s, opacity 0.18s;
+}
+.fiscal-submit-btn:hover:not(:disabled) { background: var(--violet-hover); }
+.fiscal-submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Back link */
+.fiscal-back-btn {
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  font-size: 13px;
+  color: var(--text-light);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fiscal-back-btn:hover { color: var(--text-muted); }
+
+/* ══════════════════════════════════════════
+   FISCAL TAG BADGE (in deadlines calendar)
+══════════════════════════════════════════ */
+.db-fiscal-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  background: #5B4FE8;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════
+   FISCAL OBLIGATIONS CARD
+══════════════════════════════════════════ */
+
+/* ACRE notice */
+.db-fiscal-acre-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--violet-soft);
+  border: 1px solid var(--violet-mid);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.db-fiscal-acre-icon {
+  font-size: 14px;
+  color: var(--violet);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.db-fiscal-acre-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--violet);
+  margin-bottom: 3px;
+}
+
+.db-fiscal-acre-text {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+/* Generic info notice */
+.db-fiscal-notice {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  background: var(--cream);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  line-height: 1.55;
+}
+
+/* Rows table */
+.db-fiscal-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.db-fiscal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.db-fiscal-row:first-child { padding-top: 0; }
+
+.db-fiscal-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.db-fiscal-row-name {
+  font-size: 13.5px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.db-fiscal-row-due {
+  font-size: 11.5px;
+  color: var(--text-light);
+}
+
+.db-fiscal-row-amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.db-fiscal-row-period {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-light);
+}
+
+/* Divider */
+.db-fiscal-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Total row */
+.db-fiscal-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0 10px;
+}
+
+.db-fiscal-total-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.db-fiscal-total-amount {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: clamp(22px, 4vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+/* Monthly suggestion */
+.db-fiscal-monthly-suggest {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 10px 12px;
+  background: var(--orange-soft);
+  border: 1px solid var(--orange-border);
+  border-radius: var(--r-sm);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.db-fiscal-monthly-suggest svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--orange);
+}
+
+/* Note and disclaimer */
+.db-fiscal-note {
+  font-size: 11.5px;
+  color: var(--text-light);
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.5;
+}
+
+.db-fiscal-disclaimer {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 8px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* Setup prompt */
+.db-fiscal-setup-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.db-fiscal-setup-text {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.db-fiscal-setup-btn {
+  align-self: flex-start;
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: var(--violet);
+  color: var(--white);
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.db-fiscal-setup-btn:hover { background: var(--violet-hover); }
