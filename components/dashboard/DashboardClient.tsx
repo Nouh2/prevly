@@ -9,6 +9,7 @@ import type {
   FiscalSummary,
   LegalStatus,
   ActivitySector,
+  TnsPaymentFrequency,
 } from "@/types";
 import { parseCSVContent, readFileAsText } from "@/lib/csvParser";
 import {
@@ -22,7 +23,7 @@ import {
 import FlowChart from "./FlowChart";
 
 const STORAGE_KEY = "prevly_dashboard_v2";
-const FISCAL_KEY = "prevly_fiscal_v1";
+const FISCAL_KEY = "prevly_fiscal_v3";
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 
@@ -295,12 +296,54 @@ const SECTORS: { value: ActivitySector; label: string }[] = [
   { value: "autre", label: "Autre" },
 ];
 
+const TNS_PAYMENT_FREQUENCIES: { value: TnsPaymentFrequency; label: string }[] = [
+  { value: "monthly", label: "Mensuel" },
+  { value: "quarterly", label: "Trimestriel" },
+];
+
+type OnboardingStepKey =
+  | "legal"
+  | "sector"
+  | "manager-compensation"
+  | "tns-frequency"
+  | "tns-amount"
+  | "creation";
+
+function isSasuLikeStatus(status: LegalStatus | null): boolean {
+  return status === "sasu" || status === "sas";
+}
+
+function isTnsLikeStatus(status: LegalStatus | null): boolean {
+  return (
+    status === "entreprise-individuelle" ||
+    status === "eurl" ||
+    status === "sarl"
+  );
+}
+
+function getOnboardingSteps(status: LegalStatus | null): OnboardingStepKey[] {
+  const steps: OnboardingStepKey[] = ["legal", "sector"];
+  if (isSasuLikeStatus(status)) steps.push("manager-compensation");
+  if (isTnsLikeStatus(status)) steps.push("tns-frequency", "tns-amount");
+  steps.push("creation");
+  return steps;
+}
+
 function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => void }) {
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [stepIndex, setStepIndex] = useState(0);
   const [legalStatus, setLegalStatus] = useState<LegalStatus | null>(null);
   const [sector, setSector] = useState<ActivitySector | null>(null);
   const [creationYear, setCreationYear] = useState<string>("");
   const [creationMonth, setCreationMonthVal] = useState<string>("");
+  const [managerGrossMonthly, setManagerGrossMonthly] = useState<string>("");
+  const [tnsPaymentFrequency, setTnsPaymentFrequency] = useState<TnsPaymentFrequency | null>(null);
+  const [tnsContributionAmount, setTnsContributionAmount] = useState<string>("");
+
+  const steps = getOnboardingSteps(legalStatus);
+  const safeStepIndex = Math.min(stepIndex, steps.length - 1);
+  const currentStep = steps[safeStepIndex];
+  const step = safeStepIndex;
+  const setStep = setStepIndex;
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 20 }, (_, i) => currentYear - i);
@@ -311,12 +354,50 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
     { v: "10", l: "Octobre" }, { v: "11", l: "Novembre" }, { v: "12", l: "Décembre" },
   ];
 
+  useEffect(() => {
+    if (stepIndex > steps.length - 1) {
+      setStepIndex(steps.length - 1);
+    }
+  }, [stepIndex, steps.length]);
+
+  const managerGrossMonthlyValue = Number.parseInt(
+    managerGrossMonthly.replace(/[^\d]/g, ""),
+    10
+  );
+  const isManagerGrossMonthlyValid =
+    managerGrossMonthly.trim().length > 0 &&
+    Number.isFinite(managerGrossMonthlyValue) &&
+    managerGrossMonthlyValue >= 0;
+  const tnsContributionAmountValue = Number.parseInt(
+    tnsContributionAmount.replace(/[^\d]/g, ""),
+    10
+  );
+  const isTnsContributionAmountValid =
+    tnsContributionAmount.trim().length > 0 &&
+    Number.isFinite(tnsContributionAmountValue) &&
+    tnsContributionAmountValue > 0;
+
+  const goNext = () => setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+  const goBack = () => setStepIndex((prev) => Math.max(prev - 1, 0));
+
   const handleSubmit = () => {
     if (!legalStatus || !sector || !creationYear || !creationMonth) return;
+    if (isSasuLikeStatus(legalStatus) && !isManagerGrossMonthlyValid) return;
+    if (isTnsLikeStatus(legalStatus) && !tnsPaymentFrequency) return;
+    if (isTnsLikeStatus(legalStatus) && !isTnsContributionAmountValid) return;
     onComplete({
       legalStatus,
       sector,
       creationMonth: `${creationYear}-${creationMonth}`,
+      managerGrossMonthly: isSasuLikeStatus(legalStatus)
+        ? managerGrossMonthlyValue
+        : undefined,
+      tnsPaymentFrequency: isTnsLikeStatus(legalStatus)
+        ? (tnsPaymentFrequency ?? undefined)
+        : undefined,
+      tnsContributionAmount: isTnsLikeStatus(legalStatus)
+        ? tnsContributionAmountValue
+        : undefined,
     });
   };
 
@@ -324,21 +405,18 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
     <div className="fiscal-onboarding">
       <div className="fiscal-onboarding-header">
         <div className="fiscal-onboarding-steps">
-          {[0, 1, 2].map((i) => (
+          {steps.map((_, i) => (
             <div
               key={i}
-              className={`fiscal-step-dot${i === step ? " active" : i < step ? " done" : ""}`}
+              className={`fiscal-step-dot${i === safeStepIndex ? " active" : i < safeStepIndex ? " done" : ""}`}
             />
           ))}
         </div>
-        <p className="fiscal-onboarding-sub">
-          {step === 0 && "Étape 1 sur 3"}
-          {step === 1 && "Étape 2 sur 3"}
-          {step === 2 && "Étape 3 sur 3"}
+        <p className="fiscal-onboarding-sub">{`Etape ${safeStepIndex + 1} sur ${steps.length}`}
         </p>
       </div>
 
-      {step === 0 && (
+      {currentStep === "legal" && (
         <div className="fiscal-onboarding-step">
           <p className="fiscal-onboarding-title">Quel est votre statut juridique ?</p>
           <p className="fiscal-onboarding-desc">
@@ -351,7 +429,10 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
                 className={`fiscal-choice-btn${legalStatus === value ? " selected" : ""}`}
                 onClick={() => {
                   setLegalStatus(value);
-                  setTimeout(() => setStep(1), 180);
+                  setManagerGrossMonthly("");
+                  setTnsPaymentFrequency(null);
+                  setTnsContributionAmount("");
+                  setTimeout(() => setStepIndex(1), 180);
                 }}
               >
                 {label}
@@ -361,7 +442,7 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
         </div>
       )}
 
-      {step === 1 && (
+      {currentStep === "sector" && (
         <div className="fiscal-onboarding-step">
           <p className="fiscal-onboarding-title">Quel est votre secteur d&apos;activité ?</p>
           <p className="fiscal-onboarding-desc">
@@ -374,20 +455,108 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
                 className={`fiscal-choice-btn${sector === value ? " selected" : ""}`}
                 onClick={() => {
                   setSector(value);
-                  setTimeout(() => setStep(2), 180);
+                  setTimeout(() => goNext(), 180);
                 }}
               >
                 {label}
               </button>
             ))}
           </div>
-          <button className="fiscal-back-btn" onClick={() => setStep(0)}>
+          <button className="fiscal-back-btn" onClick={goBack}>
             ← Retour
           </button>
         </div>
       )}
 
-      {step === 2 && (
+      {currentStep === "manager-compensation" && (
+        <div className="fiscal-onboarding-step">
+          <p className="fiscal-onboarding-title">Quelle rÃ©munÃ©ration brute mensuelle vous versez-vous ?</p>
+          <p className="fiscal-onboarding-desc">
+            Prevly s&apos;en sert pour estimer vos cotisations DSN en SASU/SAS. Indiquez 0 si vous ne vous versez pas encore de salaire.
+          </p>
+          <div className="fiscal-input-row">
+            <input
+              className="fiscal-input"
+              type="text"
+              inputMode="numeric"
+              placeholder="Ex. 3 500"
+              value={managerGrossMonthly}
+              onChange={(e) => setManagerGrossMonthly(e.target.value.replace(/[^\d\s]/g, ""))}
+            />
+            <span className="fiscal-input-suffix">â‚¬ brut / mois</span>
+          </div>
+          <button
+            className="fiscal-submit-btn"
+            onClick={goNext}
+            disabled={!isManagerGrossMonthlyValid}
+          >
+            Continuer â†’
+          </button>
+          <button className="fiscal-back-btn" onClick={goBack}>
+            â† Retour
+          </button>
+        </div>
+      )}
+
+      {currentStep === "tns-frequency" && (
+        <div className="fiscal-onboarding-step">
+          <p className="fiscal-onboarding-title">Ã€ quelle cadence payez-vous vos cotisations sociales ?</p>
+          <p className="fiscal-onboarding-desc">
+            Prevly utilisera ce rythme pour placer vos appels URSSAF dans le calendrier.
+          </p>
+          <div className="fiscal-choice-grid fiscal-choice-grid-2">
+            {TNS_PAYMENT_FREQUENCIES.map(({ value, label }) => (
+              <button
+                key={value}
+                className={`fiscal-choice-btn${tnsPaymentFrequency === value ? " selected" : ""}`}
+                onClick={() => {
+                  setTnsPaymentFrequency(value);
+                  setTimeout(() => goNext(), 180);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button className="fiscal-back-btn" onClick={goBack}>
+            â† Retour
+          </button>
+        </div>
+      )}
+
+      {currentStep === "tns-amount" && (
+        <div className="fiscal-onboarding-step">
+          <p className="fiscal-onboarding-title">Quel montant de cotisations vous est appele aujourd&apos;hui ?</p>
+          <p className="fiscal-onboarding-desc">
+            Saisissez le montant reel de votre dernier appel URSSAF. Prevly l&apos;utilisera en priorite plutot qu&apos;une estimation theorique.
+          </p>
+          <div className="fiscal-input-row">
+            <input
+              className="fiscal-input"
+              type="text"
+              inputMode="numeric"
+              placeholder={tnsPaymentFrequency === "quarterly" ? "Ex. 1 900" : "Ex. 630"}
+              value={tnsContributionAmount}
+              onChange={(e) => setTnsContributionAmount(e.target.value.replace(/[^\d\s]/g, ""))}
+            />
+            <span className="fiscal-input-suffix">
+              {tnsPaymentFrequency === "quarterly" ? "€ / trimestre" : "€ / mois"}
+            </span>
+          </div>
+          <button
+            className="fiscal-submit-btn"
+            onClick={goNext}
+            disabled={!isTnsContributionAmountValid}
+          >
+            Continuer
+          </button>
+          <button className="fiscal-back-btn" onClick={goBack}>
+            Retour
+          </button>
+        </div>
+      )}
+
+      {currentStep === "creation" && (
         <div className="fiscal-onboarding-step">
           <p className="fiscal-onboarding-title">Quand avez-vous créé votre entreprise ?</p>
           <p className="fiscal-onboarding-desc">
@@ -422,7 +591,7 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
           >
             Accéder à mon dashboard →
           </button>
-          <button className="fiscal-back-btn" onClick={() => setStep(1)}>
+          <button className="fiscal-back-btn" onClick={goBack}>
             ← Retour
           </button>
         </div>
@@ -764,9 +933,12 @@ function FiscalCard({
   const {
     tvaRegime,
     tvaEstimated,
+    tvaMonthlyEstimate,
     vatRate,
     isApplicable,
+    annualISEstimate,
     isEstimated,
+    isInstallmentsRequired,
     beneficeImposable,
     cotisationsEstimated,
     totalQuarterlyProvisioning,
@@ -784,9 +956,21 @@ function FiscalCard({
   const totalColor =
     totalRatio > 0.4 ? "var(--red)" : totalRatio > 0.2 ? "var(--orange)" : "var(--text)";
 
-  // Next quarterly TVA deadline label
+  // Next TVA deadline label
   const now = new Date();
-  const tvaDeadlineLabel = getTvaDeadlineLabelForQuarter(now, tvaRegime);
+  const tvaDeadlineLabel = getNextTvaDeadlineLabel(now, tvaRegime);
+  const cotisationsDueLabel = getCotisationsDueLabel(fiscalProfile);
+  const cotisationsScheduleText =
+    fiscalProfile?.tnsPaymentFrequency === "quarterly" &&
+    (fiscalProfile.legalStatus === "entreprise-individuelle" ||
+      fiscalProfile.legalStatus === "eurl" ||
+      fiscalProfile.legalStatus === "sarl")
+      ? `${formatCurrency(cotisationsEstimated * 3)}/echeance`
+      : `${formatCurrency(cotisationsEstimated)}/mois`;
+  const quarterlyCotisationsAmount = getQuarterlyCotisationsAmount(
+    fiscalProfile,
+    cotisationsEstimated
+  );
 
   return (
     <div className="db-card">
@@ -815,6 +999,12 @@ function FiscalCard({
         </div>
       )}
 
+      {isApplicable && !isFirstYear && !isInstallmentsRequired && annualISEstimate > 0 && (
+        <div className="db-fiscal-notice">
+          Pas d&apos;acompte IS requis tant que votre IS annuel estimÃ© reste sous 3 000 â‚¬.
+        </div>
+      )}
+
       {/* TVA regime info */}
       {tvaRegime === "franchise" && (
         <div className="db-fiscal-notice">
@@ -834,7 +1024,7 @@ function FiscalCard({
               {tvaRegime === "franchise"
                 ? "TVA"
                 : tvaRegime === "simplifie"
-                ? "TVA trimestrielle"
+                ? "TVA a provisionner"
                 : "TVA mensuelle"}
             </span>
             {tvaDeadlineLabel && (
@@ -844,7 +1034,7 @@ function FiscalCard({
           <span className="db-fiscal-row-amount">
             {tvaRegime === "franchise"
               ? "Non applicable"
-              : formatCurrency(tvaEstimated)}
+              : formatCurrency(tvaRegime === "normal" ? tvaMonthlyEstimate : tvaEstimated)}
           </span>
         </div>
 
@@ -853,12 +1043,12 @@ function FiscalCard({
           <div className="db-fiscal-row-label">
             <span className="db-fiscal-row-name">Cotisations sociales</span>
             <span className="db-fiscal-row-due">
-              Mensuel — {formatCurrency(cotisationsEstimated)}/mois
+              {cotisationsDueLabel} — {cotisationsScheduleText}
               {acreApplicable && <> (taux ACRE)</>}
             </span>
           </div>
           <span className="db-fiscal-row-amount">
-            {formatCurrency(cotisationsEstimated * 3)}
+            {formatCurrency(quarterlyCotisationsAmount)}
             <span className="db-fiscal-row-period"> /trimestre</span>
           </span>
         </div>
@@ -869,8 +1059,11 @@ function FiscalCard({
             <span className="db-fiscal-row-name">
               {isApplicable ? "Impôt sur les sociétés" : "Bénéfice imposable (IR)"}
             </span>
-            {isApplicable && !isFirstYear && isEstimated > 0 && (
+            {isApplicable && !isFirstYear && isInstallmentsRequired && isEstimated > 0 && (
               <span className="db-fiscal-row-due">Acompte trimestriel</span>
+            )}
+            {isApplicable && !isFirstYear && !isInstallmentsRequired && annualISEstimate > 0 && (
+              <span className="db-fiscal-row-due">Paiement au solde estimÃ©</span>
             )}
             {isApplicable && isFirstYear && (
               <span className="db-fiscal-row-due">Exonéré — 1ère année</span>
@@ -883,7 +1076,9 @@ function FiscalCard({
             {isApplicable
               ? isFirstYear
                 ? "—"
-                : formatCurrency(isEstimated)
+                : isInstallmentsRequired
+                ? formatCurrency(isEstimated)
+                : formatCurrency(annualISEstimate)
               : formatCurrency(beneficeImposable)}
           </span>
         </div>
@@ -928,23 +1123,58 @@ function FiscalCard({
 }
 
 /** Returns a human-readable label for the next TVA deadline */
-function getTvaDeadlineLabelForQuarter(
+function getNextTvaDeadlineLabel(
   now: Date,
   regime: FiscalSummary["tvaRegime"]
 ): string | null {
   if (regime === "franchise") return null;
   if (regime === "simplifie") {
-    const month = now.getMonth(); // 0-indexed
     const year = now.getFullYear();
-    // Quarterly: 15 avril (3), 15 juillet (6), 15 octobre (9), 15 janvier (0)
-    if (month <= 2) return `15 avril ${year}`;
-    if (month <= 5) return `15 juillet ${year}`;
-    if (month <= 8) return `15 octobre ${year}`;
-    return `15 janvier ${year + 1}`;
+    const candidates = [
+      new Date(year, 4, 5),
+      new Date(year, 6, 15),
+      new Date(year, 11, 15),
+      new Date(year + 1, 4, 5),
+    ];
+    const nextCandidate = candidates.find((date) => date > now) ?? candidates[candidates.length - 1];
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(nextCandidate);
   }
   // Normal: next month's 15th
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 15);
   return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(next);
+}
+
+function getCotisationsDueLabel(fiscalProfile: FiscalProfile | null): string {
+  if (!fiscalProfile) return "Mensuel";
+  if (fiscalProfile.legalStatus === "auto-entrepreneur") return "Mensuel";
+  if (fiscalProfile.legalStatus === "sasu" || fiscalProfile.legalStatus === "sas") {
+    return "Mensuel";
+  }
+  return fiscalProfile.tnsPaymentFrequency === "quarterly" ? "Trimestriel" : "Mensuel";
+}
+
+function getQuarterlyCotisationsAmount(
+  fiscalProfile: FiscalProfile | null,
+  cotisationsEstimated: number
+): number {
+  if (
+    fiscalProfile &&
+    (fiscalProfile.legalStatus === "entreprise-individuelle" ||
+      fiscalProfile.legalStatus === "eurl" ||
+      fiscalProfile.legalStatus === "sarl") &&
+    fiscalProfile.tnsContributionAmount &&
+    fiscalProfile.tnsContributionAmount > 0
+  ) {
+    return fiscalProfile.tnsPaymentFrequency === "quarterly"
+      ? fiscalProfile.tnsContributionAmount
+      : fiscalProfile.tnsContributionAmount * 3;
+  }
+
+  return cotisationsEstimated * 3;
 }
 
 // ── Fiscal setup prompt (no profile yet, but has data) ───────────────────────

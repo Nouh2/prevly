@@ -17,29 +17,42 @@ export type ActivitySector =
   | "btp"
   | "autre";
 
+export type TnsPaymentFrequency = "monthly" | "quarterly";
+
 export interface FiscalProfile {
   legalStatus: LegalStatus;
   sector: ActivitySector;
   /** "YYYY-MM" — month and year of company creation */
   creationMonth: string;
+  /** Gross monthly compensation paid to the dirigeant for SAS/SASU */
+  managerGrossMonthly?: number;
+  /** Payment cadence used for TNS social contributions */
+  tnsPaymentFrequency?: TnsPaymentFrequency;
+  /** Current TNS contribution amount per payment period */
+  tnsContributionAmount?: number;
 }
 
 export interface FiscalSummary {
   tvaRegime: "franchise" | "simplifie" | "normal";
   vatRate: number;
   tvaEstimated: number;
+  tvaMonthlyEstimate: number;
   annualCAEstimate: number;
   tvaThreshold: number;
   /** % of TVA threshold reached (0–100) */
   tvaThresholdPct: number;
   isApplicable: boolean;
+  annualISEstimate: number;
   isEstimated: number;
+  isInstallmentsRequired: boolean;
   beneficeImposable: number;
   cotisationsEstimated: number;
   cotisationsRate: number;
   /** TVA + IS acompte + cotisations×3 for the quarter */
   totalQuarterlyProvisioning: number;
   monthlySuggested: number;
+  microRevenueThreshold?: number;
+  microThresholdExceeded?: boolean;
   isFirstYear: boolean;
   acreApplicable: boolean;
   /** Monthly savings from ACRE reduction */

@@ -18,12 +18,27 @@ function fmt(n: number): string {
   }).format(n);
 }
 
+function isGoodsLikeSector(sector: ActivitySector): boolean {
+  return sector === "vente-marchandises" || sector === "restauration";
+}
+
+function isSasuLike(legalStatus: LegalStatus): boolean {
+  return legalStatus === "sasu" || legalStatus === "sas";
+}
+
+function isTnsLike(legalStatus: LegalStatus): boolean {
+  return (
+    legalStatus === "entreprise-individuelle" ||
+    legalStatus === "eurl" ||
+    legalStatus === "sarl"
+  );
+}
+
 // ── VAT rate by sector ─────────────────────────────────────────────────────────
 
 export function getVatRate(sector: ActivitySector): number {
   switch (sector) {
     case "restauration":
-    case "btp":
       return 0.1;
     default:
       return 0.2;
@@ -33,13 +48,15 @@ export function getVatRate(sector: ActivitySector): number {
 // ── TVA franchise threshold ────────────────────────────────────────────────────
 
 export function getTvaThreshold(sector: ActivitySector): number {
-  if (sector === "vente-marchandises" || sector === "restauration") return 91_900;
-  return 85_000;
+  return isGoodsLikeSector(sector) ? 85_000 : 37_500;
 }
 
 function getTvaUpperThreshold(sector: ActivitySector): number {
-  if (sector === "vente-marchandises" || sector === "restauration") return 818_000;
-  return 247_000;
+  return isGoodsLikeSector(sector) ? 945_000 : 286_000;
+}
+
+function getMicroRevenueThreshold(sector: ActivitySector): number {
+  return isGoodsLikeSector(sector) ? 203_100 : 83_600;
 }
 
 function getTvaRegime(annualCA: number, sector: ActivitySector): FiscalSummary["tvaRegime"] {
@@ -74,7 +91,8 @@ export function checkIsFirstYear(creationMonth: string): boolean {
 export function getCotisationsRate(legalStatus: LegalStatus, sector: ActivitySector): number {
   switch (legalStatus) {
     case "auto-entrepreneur":
-      if (sector === "vente-marchandises" || sector === "restauration") return 0.123;
+      if (isGoodsLikeSector(sector)) return 0.123;
+      if (sector === "liberal") return 0.256;
       return 0.212;
     case "sasu":
     case "sas":
@@ -94,7 +112,14 @@ export function computeFiscalSummary(
   monthlyFlows: MonthlyFlow[],
   currentBalance: number
 ): FiscalSummary {
-  const { legalStatus, sector, creationMonth } = fiscalProfile;
+  const {
+    legalStatus,
+    sector,
+    creationMonth,
+    managerGrossMonthly,
+    tnsPaymentFrequency,
+    tnsContributionAmount,
+  } = fiscalProfile;
 
   // Annualized CA estimate
   const last12 = monthlyFlows.slice(-12);
@@ -116,9 +141,15 @@ export function computeFiscalSummary(
 
   // Quarterly TVA estimate (last 3 months income × rate)
   const last3 = monthlyFlows.slice(-3);
-  const quarterlyIncome = last3.reduce((s, m) => s + m.income, 0);
+  const observedVatMonths = last3.length;
+  const observedVatIncome = last3.reduce((s, m) => s + m.income, 0);
+  const projectedQuarterlyIncome =
+    observedVatMonths > 0 ? (observedVatIncome / observedVatMonths) * 3 : 0;
+  const projectedMonthlyVatIncome = projectedQuarterlyIncome / 3;
+  const tvaMonthlyEstimate =
+    tvaRegime === "normal" ? Math.round(projectedMonthlyVatIncome * vatRate) : 0;
   const tvaEstimated =
-    tvaRegime !== "franchise" ? Math.round(quarterlyIncome * vatRate) : 0;
+    tvaRegime !== "franchise" ? Math.round(projectedQuarterlyIncome * vatRate) : 0;
 
   // Profitability for IS/cotisations
   const totalExpenses = last12.reduce((s, m) => s + m.expenses, 0);
@@ -136,47 +167,74 @@ export function computeFiscalSummary(
         ? beneficeImposable * 0.15
         : 42_500 * 0.15 + (beneficeImposable - 42_500) * 0.25;
   }
-  const isEstimated = Math.round(annualIS / 4);
+  const isInstallmentsRequired = annualIS >= 3_000;
+  const isEstimated = isInstallmentsRequired ? Math.round(annualIS / 4) : 0;
 
   // Cotisations (monthly)
   const cotisationsRate = getCotisationsRate(legalStatus, sector);
   const avgMonthlyIncome =
     last12.length > 0 ? totalIncome / last12.length : 0;
+  const avgMonthlyNet =
+    last12.length > 0 ? beneficeImposable / last12.length : 0;
 
   let monthlyCotisations: number;
   if (legalStatus === "auto-entrepreneur") {
     monthlyCotisations = Math.round(avgMonthlyIncome * cotisationsRate);
-  } else if (legalStatus === "sasu" || legalStatus === "sas") {
-    monthlyCotisations = Math.round(avgMonthlyIncome * cotisationsRate);
+  } else if (isSasuLike(legalStatus)) {
+    monthlyCotisations =
+      managerGrossMonthly && managerGrossMonthly > 0
+        ? Math.round(managerGrossMonthly * cotisationsRate)
+        : Math.round(avgMonthlyNet * cotisationsRate);
   } else {
-    // TNS: on annual net
-    monthlyCotisations = Math.round((beneficeImposable * cotisationsRate) / 12);
+    // TNS: use average monthly taxable profit and let the payment cadence drive the calendar.
+    if (tnsContributionAmount && tnsContributionAmount > 0) {
+      monthlyCotisations =
+        (tnsPaymentFrequency ?? "monthly") === "quarterly"
+          ? Math.round(tnsContributionAmount / 3)
+          : Math.round(tnsContributionAmount);
+    } else {
+      monthlyCotisations = Math.round(avgMonthlyNet * cotisationsRate);
+    }
   }
 
-  // ACRE: 50% off cotisations for first year
-  const acreApplicable = firstYear;
-  const acreSavings = acreApplicable ? Math.round(monthlyCotisations * 0.5) : 0;
-  if (acreApplicable) monthlyCotisations = Math.round(monthlyCotisations * 0.5);
+  // ACRE needs explicit eligibility/detection; do not auto-apply it from creation date alone.
+  const acreApplicable = false;
+  const acreSavings = 0;
 
   const cotisationsEstimated = monthlyCotisations;
+  const quarterlyCotisationsProvision =
+    isTnsLike(legalStatus) && tnsContributionAmount && tnsContributionAmount > 0
+      ? (tnsPaymentFrequency ?? "monthly") === "quarterly"
+        ? tnsContributionAmount
+        : tnsContributionAmount * 3
+      : cotisationsEstimated * 3;
   const totalQuarterlyProvisioning =
-    tvaEstimated + isEstimated + cotisationsEstimated * 3;
+    tvaEstimated + isEstimated + quarterlyCotisationsProvision;
   const monthlySuggested = Math.max(0, Math.round(totalQuarterlyProvisioning / 3));
+  const microRevenueThreshold =
+    legalStatus === "auto-entrepreneur" ? getMicroRevenueThreshold(sector) : undefined;
+  const microThresholdExceeded =
+    microRevenueThreshold !== undefined && annualCAEstimate > microRevenueThreshold;
 
   return {
     tvaRegime,
     vatRate,
     tvaEstimated,
+    tvaMonthlyEstimate,
     annualCAEstimate: Math.round(annualCAEstimate),
     tvaThreshold,
     tvaThresholdPct,
     isApplicable,
+    annualISEstimate: Math.round(annualIS),
     isEstimated,
+    isInstallmentsRequired,
     beneficeImposable: Math.round(beneficeImposable),
     cotisationsEstimated,
     cotisationsRate,
     totalQuarterlyProvisioning,
     monthlySuggested,
+    microRevenueThreshold,
+    microThresholdExceeded,
     isFirstYear: firstYear,
     acreApplicable,
     acreSavings,
@@ -197,18 +255,18 @@ function getUpcomingTvaDates(
   const candidates: Date[] = [];
 
   if (regime === "simplifie") {
-    // Fixed quarterly: 15 avril, 15 juillet, 15 octobre, 15 janvier
-    for (const y of [year - 1, year, year + 1]) {
+    // Default schedule for businesses closing on 31 Dec: CA12 in May,
+    // then semi-annual advances in July and December.
+    for (const y of [year, year + 1]) {
       candidates.push(
-        new Date(y, 3, 15),   // 15 avril
+        new Date(y, 4, 5),    // 5 mai
         new Date(y, 6, 15),   // 15 juillet
-        new Date(y, 9, 15),   // 15 octobre
-        new Date(y + 1, 0, 15) // 15 janvier
+        new Date(y, 11, 15),  // 15 decembre
       );
     }
   } else {
-    // Monthly: 15th of each of the next 4 months
-    for (let i = 1; i <= 4; i++) {
+    // Monthly: 15th of each of the next 3 months.
+    for (let i = 1; i <= 3; i++) {
       const d = new Date(referenceDate);
       d.setMonth(d.getMonth() + i);
       d.setDate(15);
@@ -236,6 +294,37 @@ function getUpcomingISDates(referenceDate: Date, endDate: Date): Date[] {
   return candidates.filter((d) => d > referenceDate && d <= endDate);
 }
 
+function getUpcomingTnsDates(
+  frequency: FiscalProfile["tnsPaymentFrequency"],
+  referenceDate: Date,
+  endDate: Date
+): Date[] {
+  const normalizedFrequency = frequency ?? "monthly";
+
+  if (normalizedFrequency === "quarterly") {
+    const year = referenceDate.getFullYear();
+    const candidates: Date[] = [];
+    for (const y of [year, year + 1]) {
+      candidates.push(
+        new Date(y, 1, 5),   // 5 fevrier
+        new Date(y, 4, 5),   // 5 mai
+        new Date(y, 7, 5),   // 5 aout
+        new Date(y, 10, 5),  // 5 novembre
+      );
+    }
+    return candidates.filter((d) => d > referenceDate && d <= endDate);
+  }
+
+  const dates: Date[] = [];
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + i, 5);
+    if (d > referenceDate && d <= endDate) {
+      dates.push(d);
+    }
+  }
+  return dates;
+}
+
 // ── Fiscal deadlines for the calendar ─────────────────────────────────────────
 
 export function computeFiscalDeadlines(
@@ -246,7 +335,7 @@ export function computeFiscalDeadlines(
   avgMonthlyCharges: number,
   referenceDate: Date
 ): Deadline[] {
-  const { legalStatus } = fiscalProfile;
+  const { legalStatus, tnsPaymentFrequency, tnsContributionAmount } = fiscalProfile;
   const endDate = new Date(referenceDate);
   endDate.setDate(endDate.getDate() + 90);
 
@@ -259,12 +348,26 @@ export function computeFiscalDeadlines(
 
   // TVA
   if (fiscalSummary.tvaRegime !== "franchise" && fiscalSummary.tvaEstimated > 0) {
-    const label =
-      fiscalSummary.tvaRegime === "simplifie"
-        ? "TVA trimestrielle"
-        : "TVA mensuelle";
-    for (const d of getUpcomingTvaDates(fiscalSummary.tvaRegime, referenceDate, endDate)) {
-      events.push({ date: d, label, amount: -fiscalSummary.tvaEstimated, tag: "TVA" });
+    const tvaDates = getUpcomingTvaDates(fiscalSummary.tvaRegime, referenceDate, endDate);
+    if (fiscalSummary.tvaRegime === "simplifie") {
+      const nextDate = tvaDates[0];
+      if (nextDate) {
+        events.push({
+          date: nextDate,
+          label: "TVA simplifiee",
+          amount: -fiscalSummary.tvaEstimated,
+          tag: "TVA",
+        });
+      }
+    } else {
+      for (const d of tvaDates) {
+        events.push({
+          date: d,
+          label: "TVA mensuelle",
+          amount: -fiscalSummary.tvaMonthlyEstimate,
+          tag: "TVA",
+        });
+      }
     }
   }
 
@@ -272,6 +375,7 @@ export function computeFiscalDeadlines(
   if (
     fiscalSummary.isApplicable &&
     !fiscalSummary.isFirstYear &&
+    fiscalSummary.isInstallmentsRequired &&
     fiscalSummary.isEstimated > 0
   ) {
     for (const d of getUpcomingISDates(referenceDate, endDate)) {
@@ -285,10 +389,7 @@ export function computeFiscalDeadlines(
   }
 
   // Cotisations deadlines for SASU/SAS (DSN mensuelle — 15th of each month)
-  if (
-    (legalStatus === "sasu" || legalStatus === "sas") &&
-    fiscalSummary.cotisationsEstimated > 0
-  ) {
+  if (isSasuLike(legalStatus) && fiscalSummary.cotisationsEstimated > 0) {
     for (let i = 1; i <= 3; i++) {
       const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + i, 15);
       if (d > referenceDate && d <= endDate) {
@@ -299,6 +400,25 @@ export function computeFiscalDeadlines(
           tag: "Cotisations",
         });
       }
+    }
+  }
+
+  if (isTnsLike(legalStatus) && fiscalSummary.cotisationsEstimated > 0) {
+    const tnsDates = getUpcomingTnsDates(tnsPaymentFrequency, referenceDate, endDate);
+    const tnsIsQuarterly = (tnsPaymentFrequency ?? "monthly") === "quarterly";
+    const tnsScheduledAmount =
+      tnsContributionAmount && tnsContributionAmount > 0
+        ? tnsContributionAmount
+        : tnsIsQuarterly
+        ? fiscalSummary.cotisationsEstimated * 3
+        : fiscalSummary.cotisationsEstimated;
+    for (const d of tnsDates) {
+      events.push({
+        date: d,
+        label: tnsIsQuarterly ? "Cotisations TNS trimestrielles" : "Cotisations TNS mensuelles",
+        amount: -tnsScheduledAmount,
+        tag: "Cotisations",
+      });
     }
   }
 
@@ -390,6 +510,19 @@ export function computeFiscalAlerts(
         action: "Provisionner maintenant",
       });
     }
+  }
+
+  // Alert 3: selected micro status is incompatible with observed turnover
+  if (
+    fiscalSummary.microThresholdExceeded &&
+    fiscalSummary.microRevenueThreshold !== undefined
+  ) {
+    alerts.push({
+      severity: "orange",
+      title: "Seuil micro-entreprise depasse",
+      message: `Votre chiffre d'affaires annualise (${fmt(fiscalSummary.annualCAEstimate)}) depasse le plafond micro (${fmt(fiscalSummary.microRevenueThreshold)}). Verifiez votre statut et votre regime fiscal.`,
+      action: "Verifier le statut",
+    });
   }
 
   return alerts;

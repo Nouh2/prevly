@@ -1773,8 +1773,12 @@ footer {
   gap: 10px;
   width: 100%;
 }
+.fiscal-choice-grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
 @media (min-width: 480px) {
   .fiscal-choice-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .fiscal-choice-grid-2 { grid-template-columns: 1fr 1fr; }
 }
 
 .fiscal-choice-btn {
@@ -1808,6 +1812,37 @@ footer {
   display: flex;
   gap: 12px;
   width: 100%;
+}
+
+.fiscal-input-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+}
+
+.fiscal-input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  border: none;
+  background: transparent;
+}
+
+.fiscal-input:focus {
+  outline: none;
+}
+
+.fiscal-input-suffix {
+  font-size: 13px;
+  color: var(--text-light);
+  white-space: nowrap;
 }
 
 .fiscal-select {
