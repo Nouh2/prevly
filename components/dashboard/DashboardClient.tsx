@@ -263,7 +263,11 @@ export default function DashboardClient() {
             openFilePicker={openFilePicker}
           />
         ) : (
-          <DashboardView data={data} fiscalProfile={fiscalProfile} />
+          <DashboardView
+            data={data}
+            fiscalProfile={fiscalProfile}
+            onConfigureFiscal={() => setShowOnboarding(true)}
+          />
         )}
       </main>
     </div>
@@ -496,9 +500,11 @@ function EmptyState({
 function DashboardView({
   data,
   fiscalProfile,
+  onConfigureFiscal,
 }: {
   data: DashboardData;
   fiscalProfile: FiscalProfile | null;
+  onConfigureFiscal: () => void;
 }) {
   const {
     currentBalance,
@@ -690,7 +696,7 @@ function DashboardView({
           fiscalProfile={fiscalProfile}
         />
       ) : !fiscalProfile ? (
-        <FiscalSetupPrompt />
+        <FiscalSetupPrompt onConfigure={onConfigureFiscal} />
       ) : null}
 
       {/* ── Row 6: Transactions + AI CFO ── */}
@@ -943,20 +949,14 @@ function getTvaDeadlineLabelForQuarter(
 
 // ── Fiscal setup prompt (no profile yet, but has data) ───────────────────────
 
-function FiscalSetupPrompt() {
+function FiscalSetupPrompt({ onConfigure }: { onConfigure: () => void }) {
   return (
     <div className="db-card db-fiscal-setup-prompt">
       <p className="db-card-label">Mes obligations fiscales</p>
       <p className="db-fiscal-setup-text">
         Configurez votre profil fiscal pour voir vos obligations TVA, cotisations et IS personnalisées.
       </p>
-      <button
-        className="db-fiscal-setup-btn"
-        onClick={() => {
-          localStorage.removeItem("prevly_fiscal_v1");
-          window.location.reload();
-        }}
-      >
+      <button className="db-fiscal-setup-btn" onClick={onConfigure}>
         Configurer mon profil fiscal →
       </button>
     </div>
