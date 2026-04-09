@@ -119,13 +119,14 @@ export default function DashboardClient() {
 
     const saved = loadFromStorage();
     if (saved) {
-      if (profile) {
-        // Recompute with fiscal profile to get fresh fiscal data
-        const fresh = buildDashboardData(saved.transactions, profile);
-        setData(fresh);
-      } else {
-        setData(saved);
-      }
+      // Always recompute from raw transactions so alert copy and derived data
+      // stay aligned with the current app version, even after text-only changes.
+      const fresh = buildDashboardData(
+        saved.transactions,
+        profile ?? undefined
+      );
+      setData(fresh);
+      saveToStorage(fresh);
     } else if (!profile) {
       // New user - show onboarding before CSV import
       setShowOnboarding(true);
