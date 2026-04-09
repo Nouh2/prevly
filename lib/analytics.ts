@@ -490,7 +490,7 @@ export function computeRecommendations(
   const recs: { action: string; impact: string }[] = [];
   const recent = monthlyFlows.slice(-6);
 
-  // 1. Charges > 50% of income — name the actual top recurring lines
+  // 1. Charges > 50% of income - name the actual top recurring lines
   if (avgMonthlyIncome > 0 && avgMonthlyCharges > 0) {
     const chargeRatio = Math.round((avgMonthlyCharges / avgMonthlyIncome) * 100);
     if (chargeRatio > 50) {

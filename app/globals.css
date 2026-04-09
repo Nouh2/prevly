@@ -534,7 +534,7 @@ section { padding: 80px 0; }
 }
 
 /* ══════════════════════════════════════════
-   SECTION — PROBLEM
+   SECTION - PROBLEM
 ══════════════════════════════════════════ */
 #problem {
   background: var(--white);
@@ -578,7 +578,7 @@ section { padding: 80px 0; }
 }
 
 /* ══════════════════════════════════════════
-   SECTION — HOW IT WORKS
+   SECTION - HOW IT WORKS
 ══════════════════════════════════════════ */
 #how {}
 
@@ -628,7 +628,7 @@ section { padding: 80px 0; }
 }
 
 /* ══════════════════════════════════════════
-   SECTION — FEATURES
+   SECTION - FEATURES
 ══════════════════════════════════════════ */
 #features {
   background: var(--white);
@@ -679,7 +679,7 @@ section { padding: 80px 0; }
 }
 
 /* ══════════════════════════════════════════
-   SECTION — COMPARISON
+   SECTION - COMPARISON
 ══════════════════════════════════════════ */
 #comparison {}
 
@@ -723,7 +723,7 @@ section { padding: 80px 0; }
 }
 
 /* ══════════════════════════════════════════
-   SECTION — PRICING
+   SECTION - PRICING
 ══════════════════════════════════════════ */
 #pricing {
   background: var(--white);
@@ -834,7 +834,7 @@ section { padding: 80px 0; }
 }
 
 /* ══════════════════════════════════════════
-   SECTION — FINAL CTA
+   SECTION - FINAL CTA
 ══════════════════════════════════════════ */
 #final-cta {
   background: var(--violet-soft);

@@ -192,7 +192,7 @@ export default function FlowChart({ monthlyFlows, forecast, currentBalance = 0 }
               formatter={(value) => (value === "tendance" ? "Tendance nette" : value)}
             />
 
-            {/* Historical bars — full opacity */}
+            {/* Historical bars - full opacity */}
             <Bar
               dataKey="Entrées"
               fill="#5B4FE8"

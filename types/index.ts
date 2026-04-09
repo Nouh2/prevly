@@ -22,7 +22,7 @@ export type TnsPaymentFrequency = "monthly" | "quarterly";
 export interface FiscalProfile {
   legalStatus: LegalStatus;
   sector: ActivitySector;
-  /** "YYYY-MM" — month and year of company creation */
+  /** "YYYY-MM" - month and year of company creation */
   creationMonth: string;
   /** Gross monthly compensation paid to the dirigeant for SAS/SASU */
   managerGrossMonthly?: number;

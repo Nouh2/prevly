@@ -388,7 +388,7 @@ export function computeFiscalDeadlines(
     }
   }
 
-  // Cotisations deadlines for SASU/SAS (DSN mensuelle — 15th of each month)
+  // Cotisations deadlines for SASU/SAS (DSN mensuelle - 15th of each month)
   if (isSasuLike(legalStatus) && fiscalSummary.cotisationsEstimated > 0) {
     for (let i = 1; i <= 3; i++) {
       const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + i, 15);

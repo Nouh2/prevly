@@ -47,7 +47,7 @@ function saveToStorage(data: DashboardData): void {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch {
-    // Storage full or unavailable — fail silently
+    // Storage full or unavailable - fail silently
   }
 }
 
@@ -127,7 +127,7 @@ export default function DashboardClient() {
         setData(saved);
       }
     } else if (!profile) {
-      // New user — show onboarding before CSV import
+      // New user - show onboarding before CSV import
       setShowOnboarding(true);
     }
   }, []);
