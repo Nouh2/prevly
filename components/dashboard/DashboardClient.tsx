@@ -171,7 +171,7 @@ export default function DashboardClient() {
         file.type !== "application/pdf"
       ) {
         setImportError(
-          "Format non reconnu. Importez un fichier .csv exporté depuis votre banque."
+          "Format non reconnu. Importez un fichier CSV ou un relevé PDF texte natif."
         );
         return;
       }
@@ -495,7 +495,7 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
 
       {currentStep === "manager-compensation" && (
         <div className="fiscal-onboarding-step">
-          <p className="fiscal-onboarding-title">Quelle rÃ©munÃ©ration brute mensuelle vous versez-vous ?</p>
+          <p className="fiscal-onboarding-title">Quelle rémunération brute mensuelle vous versez-vous ?</p>
           <p className="fiscal-onboarding-desc">
             Prevly s&apos;en sert pour estimer vos cotisations DSN en SASU/SAS. Indiquez 0 si vous ne vous versez pas encore de salaire.
           </p>
@@ -508,24 +508,24 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
               value={managerGrossMonthly}
               onChange={(e) => setManagerGrossMonthly(e.target.value.replace(/[^\d\s]/g, ""))}
             />
-            <span className="fiscal-input-suffix">â‚¬ brut / mois</span>
+            <span className="fiscal-input-suffix">€ brut / mois</span>
           </div>
           <button
             className="fiscal-submit-btn"
             onClick={goNext}
             disabled={!isManagerGrossMonthlyValid}
           >
-            Continuer â†’
+            Continuer →
           </button>
           <button className="fiscal-back-btn" onClick={goBack}>
-            â† Retour
+            ← Retour
           </button>
         </div>
       )}
 
       {currentStep === "tns-frequency" && (
         <div className="fiscal-onboarding-step">
-          <p className="fiscal-onboarding-title">Ã€ quelle cadence payez-vous vos cotisations sociales ?</p>
+          <p className="fiscal-onboarding-title">À quelle cadence payez-vous vos cotisations sociales ?</p>
           <p className="fiscal-onboarding-desc">
             Prevly utilisera ce rythme pour placer vos appels URSSAF dans le calendrier.
           </p>
@@ -544,7 +544,7 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
             ))}
           </div>
           <button className="fiscal-back-btn" onClick={goBack}>
-            â† Retour
+            ← Retour
           </button>
         </div>
       )}
@@ -1029,7 +1029,7 @@ function FiscalCard({
 
       {isApplicable && !isFirstYear && !isInstallmentsRequired && annualISEstimate > 0 && (
         <div className="db-fiscal-notice">
-          Pas d&apos;acompte IS requis tant que votre IS annuel estimÃ© reste sous 3 000 â‚¬.
+          Pas d&apos;acompte IS requis tant que votre IS annuel estimé reste sous 3 000 €.
         </div>
       )}
 
@@ -1091,7 +1091,7 @@ function FiscalCard({
               <span className="db-fiscal-row-due">Acompte trimestriel</span>
             )}
             {isApplicable && !isFirstYear && !isInstallmentsRequired && annualISEstimate > 0 && (
-              <span className="db-fiscal-row-due">Paiement au solde estimÃ©</span>
+              <span className="db-fiscal-row-due">Paiement au solde estimé</span>
             )}
             {isApplicable && isFirstYear && (
               <span className="db-fiscal-row-due">Exonéré, 1ère année</span>
