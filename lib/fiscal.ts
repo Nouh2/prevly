@@ -354,7 +354,7 @@ export function computeFiscalDeadlines(
       if (nextDate) {
         events.push({
           date: nextDate,
-          label: "TVA simplifiee",
+          label: "TVA simplifiée",
           amount: -fiscalSummary.tvaEstimated,
           tag: "TVA",
         });
@@ -519,9 +519,9 @@ export function computeFiscalAlerts(
   ) {
     alerts.push({
       severity: "orange",
-      title: "Seuil micro-entreprise depasse",
-      message: `Votre chiffre d'affaires annualise (${fmt(fiscalSummary.annualCAEstimate)}) depasse le plafond micro (${fmt(fiscalSummary.microRevenueThreshold)}). Verifiez votre statut et votre regime fiscal.`,
-      action: "Verifier le statut",
+      title: "Seuil micro-entreprise dépassé",
+      message: `Votre chiffre d'affaires annualisé (${fmt(fiscalSummary.annualCAEstimate)}) dépasse le plafond micro (${fmt(fiscalSummary.microRevenueThreshold)}). Vérifiez votre statut et votre régime fiscal.`,
+      action: "Vérifier le statut",
     });
   }
 

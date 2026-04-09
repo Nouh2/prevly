@@ -150,7 +150,7 @@ export default function DashboardClient() {
       setData(dashboard);
       saveToStorage(dashboard);
       if (result.source === "pdf" && result.bankLabel) {
-        setImportHint(`PDF beta reconnu: ${result.bankLabel}.`);
+        setImportHint(`PDF bêta reconnu : ${result.bankLabel}.`);
       }
     } catch {
       setImportError(
@@ -437,7 +437,7 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
             />
           ))}
         </div>
-        <p className="fiscal-onboarding-sub">{`Etape ${safeStepIndex + 1} sur ${steps.length}`}
+        <p className="fiscal-onboarding-sub">{`Étape ${safeStepIndex + 1} sur ${steps.length}`}
         </p>
       </div>
 
@@ -551,9 +551,9 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
 
       {currentStep === "tns-amount" && (
         <div className="fiscal-onboarding-step">
-          <p className="fiscal-onboarding-title">Quel montant de cotisations vous est appele aujourd&apos;hui ?</p>
+          <p className="fiscal-onboarding-title">Quel montant de cotisations payez-vous actuellement ?</p>
           <p className="fiscal-onboarding-desc">
-            Saisissez le montant reel de votre dernier appel URSSAF. Prevly l&apos;utilisera en priorite plutot qu&apos;une estimation theorique.
+            Saisissez le montant réel de votre dernier appel URSSAF. Prevly l&apos;utilisera en priorité plutôt qu&apos;une estimation théorique.
           </p>
           <div className="fiscal-input-row">
             <input
@@ -672,7 +672,7 @@ function EmptyState({
           <path d="M19 4v20M11 12l8-8 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           <path d="M4 28v4a2 2 0 002 2h26a2 2 0 002-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
-        <span className="import-zone-badge">PDF beta</span>
+        <span className="import-zone-badge">PDF bêta</span>
         <p className="import-zone-title">
           {isDragging ? "Relâchez pour importer" : "Glissez votre fichier ici"}
         </p>
@@ -681,11 +681,12 @@ function EmptyState({
           className="import-zone-btn"
           onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
           type="button"
+          disabled={isImporting}
         >
-          Sélectionner un fichier CSV
+          {isImporting ? "Lecture en cours..." : "Sélectionner un fichier CSV ou PDF"}
         </button>
         <p className="import-zone-hint">
-          Formats supportés : exports CSV des banques françaises (BNP, Société Générale, LCL, CIC, Crédit Agricole…)
+          Formats supportés : exports CSV des banques françaises et relevés PDF texte natif BNP, Société Générale, Crédit Agricole et LCL.
         </p>
       </div>
     </div>
@@ -993,7 +994,7 @@ function FiscalCard({
     (fiscalProfile.legalStatus === "entreprise-individuelle" ||
       fiscalProfile.legalStatus === "eurl" ||
       fiscalProfile.legalStatus === "sarl")
-      ? `${formatCurrency(cotisationsEstimated * 3)}/echeance`
+      ? `${formatCurrency(cotisationsEstimated * 3)}/échéance`
       : `${formatCurrency(cotisationsEstimated)}/mois`;
   const quarterlyCotisationsAmount = getQuarterlyCotisationsAmount(
     fiscalProfile,
@@ -1052,7 +1053,7 @@ function FiscalCard({
               {tvaRegime === "franchise"
                 ? "TVA"
                 : tvaRegime === "simplifie"
-                ? "TVA a provisionner"
+                ? "TVA à provisionner"
                 : "TVA mensuelle"}
             </span>
             {tvaDeadlineLabel && (

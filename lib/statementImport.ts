@@ -35,13 +35,13 @@ export async function parseStatementFile(
         transactions: result.transactions,
       };
     } catch {
-      return {
-        ok: false,
-        source: "csv",
-        code: "file-read-error",
-        error:
-          "Impossible de lire ce fichier CSV. Verifiez son export puis reessayez.",
-      };
+    return {
+      ok: false,
+      source: "csv",
+      code: "file-read-error",
+      error:
+          "Impossible de lire ce fichier CSV. Vérifiez son export puis réessayez.",
+    };
     }
   }
 
@@ -54,6 +54,6 @@ export async function parseStatementFile(
     source: "unknown",
     code: "unsupported-file-type",
     error:
-      "Format non reconnu. Importez un fichier CSV ou un releve PDF texte natif.",
+      "Format non reconnu. Importez un fichier CSV ou un relevé PDF texte natif.",
   };
 }
