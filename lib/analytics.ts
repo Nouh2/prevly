@@ -208,7 +208,7 @@ export function computeHealthScore(
 
   const coverageRatio = avgExpenses > 0 ? currentBalance / avgExpenses : 0;
   if (coverageRatio >= 2) {
-    explanation.push(`Points forts : votre solde couvre plus de ${coverageRatio.toFixed(1)} mois de charges — bonne réserve.`);
+    explanation.push(`Points forts : votre solde couvre plus de ${coverageRatio.toFixed(1)} mois de charges, bonne réserve.`);
   } else if (coverageRatio >= 1) {
     explanation.push(`Points forts : votre solde couvre environ ${coverageRatio.toFixed(1)} mois de charges.`);
   } else {
@@ -216,9 +216,9 @@ export function computeHealthScore(
   }
 
   if (positiveMonths === 3) {
-    explanation.push("Flux nets positifs 3 mois consécutifs — tendance favorable.");
+    explanation.push("Flux nets positifs 3 mois consécutifs, tendance favorable.");
   } else if (positiveMonths === 0) {
-    explanation.push("Flux nets négatifs sur les 3 derniers mois — attention à la tendance.");
+    explanation.push("Flux nets négatifs sur les 3 derniers mois, attention à la tendance.");
   }
 
   if (avgExpenses > 0 && avgIncome > 0) {
@@ -229,11 +229,11 @@ export function computeHealthScore(
   }
 
   if (cv > 0.6) {
-    explanation.push("Revenus irréguliers détectés — constituez une réserve de sécurité.");
+    explanation.push("Revenus irréguliers détectés, constituez une réserve de sécurité.");
   }
 
   if (monthsOfData < 6) {
-    explanation.push(`Données limitées : score basé sur ${monthsOfData} mois — importez 6 mois pour plus de précision.`);
+    explanation.push(`Données limitées : score basé sur ${monthsOfData} mois, importez 6 mois pour plus de précision.`);
   }
 
   return { score: raw, label, color, explanation: explanation.slice(0, 3) };
@@ -402,7 +402,7 @@ export function computeAlerts(
     alerts.push({
       severity: "red",
       title: "Risque de trésorerie critique",
-      message: `Votre ${shortLabel(criticalDeadline.label)} de ${formatCurrency(Math.abs(criticalDeadline.amount))} tombe le ${formatDateDeadline(criticalDeadline.date)}. Votre solde estimé ce jour sera de ${formatCurrency(criticalDeadline.estimatedBalance)} — soit moins d'un mois de charges. Anticipez dès maintenant.`,
+      message: `Votre ${shortLabel(criticalDeadline.label)} de ${formatCurrency(Math.abs(criticalDeadline.amount))} tombe le ${formatDateDeadline(criticalDeadline.date)}. Votre solde estimé ce jour sera de ${formatCurrency(criticalDeadline.estimatedBalance)}, soit moins d'un mois de charges. Anticipez dès maintenant.`,
       action: "Agissez maintenant",
     });
   }
@@ -421,7 +421,7 @@ export function computeAlerts(
     if (j90drop) {
       msg = `Votre solde estimé à J+90 (${formatCurrency(forecast.j90)}) est inférieur de plus de 20% à votre solde actuel. Votre runway passe de ${currentRunway.toFixed(1)} à ${Math.max(0, futureRunway).toFixed(1)} mois.`;
     } else {
-      msg = `Vos dépenses ont dépassé vos revenus sur ${negCount} des 3 derniers mois. Votre solde couvre actuellement ${currentRunway.toFixed(1)} mois de charges — restez vigilant sur votre niveau d'activité.`;
+      msg = `Vos dépenses ont dépassé vos revenus sur ${negCount} des 3 derniers mois. Votre solde couvre actuellement ${currentRunway.toFixed(1)} mois de charges, restez vigilant sur votre niveau d'activité.`;
     }
     alerts.push({
       severity: "orange",
@@ -452,7 +452,7 @@ export function computeAlerts(
       alerts.push({
         severity: "blue",
         title: "Opportunité de provisionnement",
-        message: `Votre trésorerie est confortable. Provisionnez dès maintenant votre ${shortLabel(nextQuarterlyCharge.label)} du ${formatDateDeadline(nextDate)} — soit ${formatCurrency(Math.abs(nextQuarterlyCharge.amount))} à mettre de côté.`,
+        message: `Votre trésorerie est confortable. Provisionnez dès maintenant votre ${shortLabel(nextQuarterlyCharge.label)} du ${formatDateDeadline(nextDate)}, soit ${formatCurrency(Math.abs(nextQuarterlyCharge.amount))} à mettre de côté.`,
         action: "Provisionner maintenant",
       });
     }
@@ -507,7 +507,7 @@ export function computeRecommendations(
         const pct = Math.round((totalTop2 / avgMonthlyCharges) * 100);
         action = `${top2[0].label} (${formatCurrency(top2[0].monthly)}/mois) et ${top2[1].label} (${formatCurrency(top2[1].monthly)}/mois) représentent ${pct}% de vos charges fixes. Ce sont vos deux seuls leviers réels pour améliorer votre runway.`;
       } else if (top2.length === 1) {
-        action = `${top2[0].label} (${formatCurrency(top2[0].monthly)}/mois) est votre principale charge fixe — ${Math.round((top2[0].monthly / avgMonthlyCharges) * 100)}% de vos charges totales.`;
+        action = `${top2[0].label} (${formatCurrency(top2[0].monthly)}/mois) est votre principale charge fixe, soit ${Math.round((top2[0].monthly / avgMonthlyCharges) * 100)}% de vos charges totales.`;
       } else {
         action = `Vos charges fixes absorbent ${chargeRatio}% de vos revenus moyens. Identifiez les postes compressibles pour améliorer votre runway.`;
       }
@@ -529,7 +529,7 @@ export function computeRecommendations(
     if (cv > 0.4) {
       const safetyReserve = Math.round(avgMonthlyCharges * 2);
       recs.push({
-        action: `Vos revenus sont irréguliers — votre mois le plus bas représente ${Math.round((minIncome / mean) * 100)}% de votre mois moyen.`,
+        action: `Vos revenus sont irréguliers, votre mois le plus bas représente ${Math.round((minIncome / mean) * 100)}% de votre mois moyen.`,
         impact: `Constituez une réserve de sécurité de ${formatCurrency(safetyReserve)} (2 mois de charges) pour absorber les creux.`,
       });
     }

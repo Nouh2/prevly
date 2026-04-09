@@ -163,3 +163,28 @@ export interface CSVColumnMap {
 export type CSVParseResult =
   | { ok: true; transactions: Transaction[] }
   | { ok: false; error: string };
+
+export type StatementImportSource = "csv" | "pdf";
+
+export type StatementImportErrorCode =
+  | "unsupported-file-type"
+  | "file-read-error"
+  | "csv-invalid"
+  | "pdf-scan-unsupported"
+  | "pdf-bank-unsupported"
+  | "pdf-no-transactions"
+  | "pdf-low-confidence";
+
+export type StatementImportResult =
+  | {
+      ok: true;
+      source: StatementImportSource;
+      transactions: Transaction[];
+      bankLabel?: string;
+    }
+  | {
+      ok: false;
+      source: StatementImportSource | "unknown";
+      code: StatementImportErrorCode;
+      error: string;
+    };

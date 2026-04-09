@@ -277,7 +277,7 @@ export default function LandingPage() {
           <p className="hero-sub">
             Prevly prédit vos flux sur 90 jours, détecte les tensions avant
             qu&apos;elles arrivent, et vous conseille comme votre
-            expert-comptable &mdash; mais disponible 24h/24.
+            expert-comptable, disponible 24h/24.
           </p>
 
           {/* Dashboard Demo */}
@@ -358,7 +358,7 @@ export default function LandingPage() {
                 </svg>
                 <div className="dash-alert-text">
                   <strong>Alerte :</strong> échéance URSSAF estimée dans 18
-                  jours &mdash; provisionnez 2 340 &euro;.
+                  jours, provisionnez 2 340 &euro;.
                 </div>
               </div>
             </div>
@@ -374,7 +374,7 @@ export default function LandingPage() {
           <div className="form-wrap" id="wrap-hero">
             {formSuccess ? (
               <div className="success-msg visible" role="status">
-                Vous êtes sur la liste &mdash; on vous contacte très vite.
+                Vous êtes sur la liste, on vous contacte très vite.
               </div>
             ) : (
               <>
@@ -441,7 +441,7 @@ export default function LandingPage() {
             <div className="stat-block fade-up" data-delay="2">
               <div className="stat-num">72&nbsp;%</div>
               <p className="stat-desc">
-                pilotent leur trésorerie à vue &mdash; sur Excel, dans un
+                pilotent leur trésorerie à vue, sur Excel, dans un
                 tableur improvisé ou de mémoire.
               </p>
             </div>
@@ -469,7 +469,7 @@ export default function LandingPage() {
                 <p>
                   Glissez vos relevés des 6 derniers mois en CSV. Prevly
                   prend en charge tous les exports standards des banques
-                  françaises &mdash; aucun reformatage nécessaire.
+                  françaises, sans reformatage nécessaire.
                 </p>
               </div>
             </div>
@@ -490,8 +490,8 @@ export default function LandingPage() {
                 <h3>Recevez des alertes, posez vos questions</h3>
                 <p>
                   Prevly vous prévient avant chaque tension. Posez vos
-                  questions à votre expert-comptable IA &mdash; URSSAF, TVA,
-                  cotisations &mdash; en français, sans jargon comptable.
+                  questions à votre expert-comptable IA, URSSAF, TVA,
+                  cotisations, en français, sans jargon comptable.
                 </p>
               </div>
             </div>
@@ -516,7 +516,7 @@ export default function LandingPage() {
             </div>
             <div className="feature fade-up" data-delay="1">
               <div className="feature-idx">02</div>
-              <h3>Prévision trésorerie IA 30 &mdash; 90 jours</h3>
+              <h3>Prévision trésorerie IA 30 à 90 jours</h3>
               <p>
                 Modèle entraîné sur vos propres flux, pas des moyennes
                 sectorielles génériques.
@@ -526,7 +526,7 @@ export default function LandingPage() {
               <div className="feature-idx">03</div>
               <h3>Alertes proactives avant chaque tension</h3>
               <p>
-                URSSAF, TVA, loyer, charges fixes &mdash; Prevly anticipe et
+                URSSAF, TVA, loyer, charges fixes, Prevly anticipe et
                 vous prévient avant chaque échéance.
               </p>
             </div>
@@ -607,7 +607,7 @@ export default function LandingPage() {
               </p>
               <ul className="pricing-feats">
                 <li>Score de santé financière</li>
-                <li>Prévisions 30 &mdash; 90 jours</li>
+                <li>Prévisions 30 à 90 jours</li>
                 <li>Alertes URSSAF et TVA</li>
                 <li>Expert-comptable IA disponible 24h/24</li>
                 <li>Import CSV illimité</li>
@@ -684,7 +684,7 @@ export default function LandingPage() {
             <div className="form-wrap fade-up" id="wrap-final">
               {formSuccess ? (
                 <div className="success-msg visible" role="status">
-                  Vous êtes sur la liste &mdash; on vous contacte très vite.
+                  Vous êtes sur la liste, on vous contacte très vite.
                 </div>
               ) : (
                 <>

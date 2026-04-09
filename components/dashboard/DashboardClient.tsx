@@ -11,7 +11,7 @@ import type {
   ActivitySector,
   TnsPaymentFrequency,
 } from "@/types";
-import { parseCSVContent, readFileAsText } from "@/lib/csvParser";
+import { IMPORT_ACCEPT, parseStatementFile } from "@/lib/statementImport";
 import {
   buildDashboardData,
   formatCurrency,
@@ -102,6 +102,8 @@ function loadFiscalProfile(): FiscalProfile | null {
 export default function DashboardClient() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importHint, setImportHint] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -132,9 +134,10 @@ export default function DashboardClient() {
 
   const processFile = useCallback(async (file: File) => {
     setImportError(null);
+    setImportHint(null);
+    setIsImporting(true);
     try {
-      const content = await readFileAsText(file);
-      const result = parseCSVContent(content);
+      const result = await parseStatementFile(file);
       if (!result.ok) {
         setImportError(result.error);
         return;
@@ -145,16 +148,27 @@ export default function DashboardClient() {
       );
       setData(dashboard);
       saveToStorage(dashboard);
+      if (result.source === "pdf" && result.bankLabel) {
+        setImportHint(`PDF beta reconnu: ${result.bankLabel}.`);
+      }
     } catch {
       setImportError(
-        "Impossible de lire le fichier. Assurez-vous qu'il s'agit d'un fichier CSV valide."
+        "Impossible de lire le fichier. Essayez avec un CSV ou un PDF texte natif."
       );
+    } finally {
+      setIsImporting(false);
     }
   }, []);
 
   const handleFile = useCallback(
     (file: File) => {
-      if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv") {
+      setImportHint(null);
+      if (
+        !file.name.toLowerCase().endsWith(".csv") &&
+        file.type !== "text/csv" &&
+        !file.name.toLowerCase().endsWith(".pdf") &&
+        file.type !== "application/pdf"
+      ) {
         setImportError(
           "Format non reconnu. Importez un fichier .csv exporté depuis votre banque."
         );
@@ -202,12 +216,16 @@ export default function DashboardClient() {
           Prev<span>ly</span>
         </a>
         {data && <span className="db-header-title">Dashboard</span>}
-        <button className="db-import-btn" onClick={openFilePicker}>
+        <button
+          className="db-import-btn"
+          onClick={openFilePicker}
+          disabled={isImporting}
+        >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M1 10v1.5A1.5 1.5 0 002.5 13h9A1.5 1.5 0 0013 11.5V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
-          Importer
+          {isImporting ? "Import en cours..." : "Importer CSV ou PDF"}
         </button>
       </header>
 
@@ -215,7 +233,7 @@ export default function DashboardClient() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".csv,text/csv"
+        accept={IMPORT_ACCEPT}
         style={{ display: "none" }}
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -253,12 +271,18 @@ export default function DashboardClient() {
             </a>
           </div>
         )}
+        {importHint && !importError && (
+          <div className="db-import-hint" role="status">
+            {importHint}
+          </div>
+        )}
 
         {showOnboarding ? (
           <FiscalOnboarding onComplete={handleOnboardingComplete} />
         ) : !data ? (
           <EmptyState
             onFileSelected={handleFile}
+            isImporting={isImporting}
             isDragging={isDragging}
             setIsDragging={setIsDragging}
             openFilePicker={openFilePicker}
@@ -604,11 +628,13 @@ function FiscalOnboarding({ onComplete }: { onComplete: (p: FiscalProfile) => vo
 
 function EmptyState({
   onFileSelected,
+  isImporting,
   isDragging,
   setIsDragging,
   openFilePicker,
 }: {
   onFileSelected: (f: File) => void;
+  isImporting: boolean;
   isDragging: boolean;
   setIsDragging: (v: boolean) => void;
   openFilePicker: () => void;
@@ -638,13 +664,14 @@ function EmptyState({
         onClick={openFilePicker}
         role="button"
         tabIndex={0}
-        aria-label="Zone d'import CSV"
+        aria-label="Zone d'import CSV ou PDF"
         onKeyDown={(e) => e.key === "Enter" && openFilePicker()}
       >
         <svg className="import-zone-icon" viewBox="0 0 38 38" fill="none" aria-hidden="true">
           <path d="M19 4v20M11 12l8-8 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           <path d="M4 28v4a2 2 0 002 2h26a2 2 0 002-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
+        <span className="import-zone-badge">PDF beta</span>
         <p className="import-zone-title">
           {isDragging ? "Relâchez pour importer" : "Glissez votre fichier ici"}
         </p>
@@ -797,7 +824,7 @@ function DashboardView({
 
       {/* ── Row 3: Chart ── */}
       <div className="db-card">
-        <p className="db-card-label">Flux — historique & prévisions 90 jours</p>
+        <p className="db-card-label">Flux, historique et prévisions 90 jours</p>
         <FlowChart
           monthlyFlows={monthlyFlows.slice(-6)}
           forecast={forecast}
@@ -894,7 +921,7 @@ function DashboardView({
           <div className="db-ai-badge">Bientôt disponible</div>
           <p className="db-ai-title">Votre expert-comptable IA</p>
           <p className="db-ai-desc">
-            Posez vos questions en langage naturel &mdash; URSSAF, TVA,
+            Posez vos questions en langage naturel, URSSAF, TVA,
             cotisations. Disponible très prochainement.
           </p>
         </div>
@@ -907,7 +934,7 @@ function DashboardView({
           <div className="db-reco-list">
             {recommendations.map((r, i) => (
               <div key={i} className="db-reco-item">
-                <p className="db-reco-action">— {r.action}</p>
+                <p className="db-reco-action">{r.action}</p>
                 <p className="db-reco-impact">{r.impact}</p>
               </div>
             ))}
@@ -981,7 +1008,7 @@ function FiscalCard({
         <div className="db-fiscal-acre-notice">
           <span className="db-fiscal-acre-icon">★</span>
           <div>
-            <p className="db-fiscal-acre-title">ACRE — Première année d&apos;activité</p>
+            <p className="db-fiscal-acre-title">ACRE, première année d&apos;activité</p>
             <p className="db-fiscal-acre-text">
               Vos cotisations sont réduites de 50% cette année.{" "}
               {acreSavings > 0 && (
@@ -1008,7 +1035,7 @@ function FiscalCard({
       {/* TVA regime info */}
       {tvaRegime === "franchise" && (
         <div className="db-fiscal-notice">
-          Vous êtes en franchise de TVA — vous ne facturez pas de TVA.
+          Vous êtes en franchise de TVA, vous ne facturez pas de TVA.
           {tvaThresholdPct >= 80 && (
             <strong> Attention : vous avez atteint {tvaThresholdPct}% du seuil ({formatCurrency(tvaThreshold)}).</strong>
           )}
@@ -1043,7 +1070,7 @@ function FiscalCard({
           <div className="db-fiscal-row-label">
             <span className="db-fiscal-row-name">Cotisations sociales</span>
             <span className="db-fiscal-row-due">
-              {cotisationsDueLabel} — {cotisationsScheduleText}
+              {cotisationsDueLabel}, {cotisationsScheduleText}
               {acreApplicable && <> (taux ACRE)</>}
             </span>
           </div>
@@ -1066,7 +1093,7 @@ function FiscalCard({
               <span className="db-fiscal-row-due">Paiement au solde estimÃ©</span>
             )}
             {isApplicable && isFirstYear && (
-              <span className="db-fiscal-row-due">Exonéré — 1ère année</span>
+              <span className="db-fiscal-row-due">Exonéré, 1ère année</span>
             )}
             {!isApplicable && (
               <span className="db-fiscal-row-due">Imposé à votre taux marginal IR</span>
@@ -1075,7 +1102,7 @@ function FiscalCard({
           <span className="db-fiscal-row-amount">
             {isApplicable
               ? isFirstYear
-                ? "—"
+                ? "Non applicable"
                 : isInstallmentsRequired
                 ? formatCurrency(isEstimated)
                 : formatCurrency(annualISEstimate)

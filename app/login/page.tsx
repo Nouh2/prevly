@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Connexion — Prevly",
+  title: "Connexion | Prevly",
 };
 
 export default function LoginPage() {
@@ -37,7 +37,7 @@ export default function LoginPage() {
             color: "var(--text-muted)",
           }}
         >
-          Page de connexion — disponible en V2.
+          Page de connexion, disponible en V2.
         </p>
         <a
           href="/"
