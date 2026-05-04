@@ -55,7 +55,7 @@ export default function AuthForm({ mode }: Props) {
 
     const supabase = await warmSupabaseClient();
     if (!supabase) {
-      setError("Supabase n'est pas configure. Ajoutez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      setError("Configuration Supabase invalide. Verifiez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans Vercel.");
       setLoading(false);
       return;
     }
