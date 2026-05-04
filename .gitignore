@@ -17,6 +17,10 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+tsconfig.tsbuildinfo
+.claude/
+TFT Hebdomadaire V3 Prevly.xlsx
 
 # OS
 .DS_Store

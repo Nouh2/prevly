@@ -1,17 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type {
   DashboardData,
   Deadline,
-  RecurringCharge,
   FiscalProfile,
   FiscalSummary,
   LegalStatus,
+  RecurringCharge,
   ActivitySector,
   TnsPaymentFrequency,
 } from "@/types";
-import { IMPORT_ACCEPT, parseStatementFile } from "@/lib/statementImport";
 import {
   buildDashboardData,
   formatCurrency,
@@ -20,7 +21,44 @@ import {
   formatDateDeadline,
   forecastColor,
 } from "@/lib/analytics";
-import FlowChart from "./FlowChart";
+
+const IMPORT_ACCEPT = ".csv,.pdf,text/csv,application/pdf";
+
+const AuthNav = dynamic(() => import("@/components/auth/AuthNav"), {
+  ssr: false,
+  loading: () => (
+    <div className="auth-nav">
+      <a href="/login">Connexion</a>
+    </div>
+  ),
+});
+
+const FlowChart = dynamic(() => import("./FlowChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="db-chart-loading">Chargement du graphique...</div>
+  ),
+});
+
+async function loadRemoteDashboardStateSafe() {
+  const { loadRemoteDashboardState } = await import("@/lib/supabase/sync");
+  return loadRemoteDashboardState();
+}
+
+function saveRemoteDashboardStateSafe(
+  dashboard: DashboardData,
+  fiscalProfile: FiscalProfile | null
+): void {
+  void import("@/lib/supabase/sync").then(({ saveRemoteDashboardState }) =>
+    saveRemoteDashboardState(dashboard, fiscalProfile)
+  );
+}
+
+function saveRemoteFiscalProfileSafe(fiscalProfile: FiscalProfile): void {
+  void import("@/lib/supabase/sync").then(({ saveRemoteFiscalProfile }) =>
+    saveRemoteFiscalProfile(fiscalProfile)
+  );
+}
 
 const STORAGE_KEY = "prevly_dashboard_v2";
 const FISCAL_KEY = "prevly_fiscal_v3";
@@ -113,24 +151,40 @@ export default function DashboardClient() {
   const fiscalProfileRef = useRef<FiscalProfile | null>(null);
 
   useEffect(() => {
-    const profile = loadFiscalProfile();
-    fiscalProfileRef.current = profile;
-    setFiscalProfile(profile);
+    let cancelled = false;
 
-    const saved = loadFromStorage();
-    if (saved) {
-      // Always recompute from raw transactions so alert copy and derived data
-      // stay aligned with the current app version, even after text-only changes.
-      const fresh = buildDashboardData(
-        saved.transactions,
-        profile ?? undefined
-      );
-      setData(fresh);
-      saveToStorage(fresh);
-    } else if (!profile) {
-      // New user - show onboarding before CSV import
-      setShowOnboarding(true);
+    async function hydrate() {
+      const localProfile = loadFiscalProfile();
+      const remote = await loadRemoteDashboardStateSafe();
+      const profile = remote?.fiscalProfile ?? localProfile;
+      const saved = remote?.dashboard ?? loadFromStorage();
+
+      if (cancelled) return;
+
+      fiscalProfileRef.current = profile;
+      setFiscalProfile(profile);
+
+      if (saved) {
+        // Always recompute from raw transactions so alert copy and derived data
+        // stay aligned with the current app version, even after text-only changes.
+        const fresh = buildDashboardData(
+          saved.transactions,
+          profile ?? undefined
+        );
+        setData(fresh);
+        saveToStorage(fresh);
+        saveRemoteDashboardStateSafe(fresh, profile);
+      } else if (!profile) {
+        // New user - show onboarding before CSV import
+        setShowOnboarding(true);
+      }
     }
+
+    void hydrate();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const processFile = useCallback(async (file: File) => {
@@ -138,6 +192,7 @@ export default function DashboardClient() {
     setImportHint(null);
     setIsImporting(true);
     try {
+      const { parseStatementFile } = await import("@/lib/statementImport");
       const result = await parseStatementFile(file);
       if (!result.ok) {
         setImportError(result.error);
@@ -149,6 +204,7 @@ export default function DashboardClient() {
       );
       setData(dashboard);
       saveToStorage(dashboard);
+      saveRemoteDashboardStateSafe(dashboard, fiscalProfileRef.current);
       if (result.source === "pdf" && result.bankLabel) {
         setImportHint(`PDF bêta reconnu : ${result.bankLabel}.`);
       }
@@ -199,12 +255,14 @@ export default function DashboardClient() {
     fiscalProfileRef.current = profile;
     setFiscalProfile(profile);
     saveFiscalProfile(profile);
+    saveRemoteFiscalProfileSafe(profile);
     setShowOnboarding(false);
     // If data was already loaded (rare edge case), recompute with new profile
     setData((prev) => {
       if (!prev) return prev;
       const fresh = buildDashboardData(prev.transactions, profile);
       saveToStorage(fresh);
+      saveRemoteDashboardStateSafe(fresh, profile);
       return fresh;
     });
   }, []);
@@ -213,21 +271,31 @@ export default function DashboardClient() {
     <div className="db-page">
       {/* Header */}
       <header className="db-header">
-        <a href="/" className="db-logo">
-          Prev<span>ly</span>
-        </a>
-        {data && <span className="db-header-title">Dashboard</span>}
-        <button
-          className="db-import-btn"
-          onClick={openFilePicker}
-          disabled={isImporting}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M1 10v1.5A1.5 1.5 0 002.5 13h9A1.5 1.5 0 0013 11.5V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          {isImporting ? "Import en cours..." : "Importer CSV ou PDF"}
-        </button>
+        <div className="db-header-left">
+          <a href="/" className="db-logo">
+            Prev<span>ly</span>
+          </a>
+          <nav className="db-header-nav" aria-label="Navigation principale">
+            {data && <span className="db-header-nav-item active">Dashboard</span>}
+            <Link href="/tft" className="db-header-nav-item">
+              Trésorerie prévisionnelle
+            </Link>
+          </nav>
+        </div>
+        <div className="db-header-actions">
+          <AuthNav />
+          <button
+            className="db-import-btn"
+            onClick={openFilePicker}
+            disabled={isImporting}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M1 10v1.5A1.5 1.5 0 002.5 13h9A1.5 1.5 0 0013 11.5V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            {isImporting ? "Import en cours..." : "Importer CSV ou PDF"}
+          </button>
+        </div>
       </header>
 
       {/* Hidden file input */}

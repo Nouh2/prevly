@@ -1,6 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
+
+const AuthNav = dynamic(() => import("@/components/auth/AuthNav"), {
+  ssr: false,
+  loading: () => (
+    <div className="auth-nav">
+      <a href="/login">Connexion</a>
+    </div>
+  ),
+});
 
 const STORE_KEY = "prevly_beta_v2";
 const WAITLIST_ENDPOINT =
@@ -249,9 +259,12 @@ export default function LandingPage() {
         <div className="wordmark">
           Prev<span className="wordmark-accent">ly</span>
         </div>
-        <button className="nav-cta" onClick={goToFinalCTA}>
-          Rejoindre la bêta
-        </button>
+        <div className="nav-actions">
+          <AuthNav />
+          <button className="nav-cta" onClick={goToFinalCTA}>
+            Rejoindre la bêta
+          </button>
+        </div>
       </nav>
 
       {/* ── HERO ── */}

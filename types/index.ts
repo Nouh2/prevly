@@ -188,3 +188,16 @@ export type StatementImportResult =
       code: StatementImportErrorCode;
       error: string;
     };
+
+export type {
+  TftAssumptions,
+  TftCatalogLine,
+  TftLegalForm,
+  TftScenario,
+  TftScenarioKey,
+  TftSection,
+  TftSettings,
+  TftStoragePayload,
+  TftVatRegime,
+  TftWeekRow,
+} from "@/lib/tft/types";
